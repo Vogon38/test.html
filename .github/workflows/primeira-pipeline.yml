@@ -1,24 +1,48 @@
-name: Pipeline de Teste de Logs
+name: Secrets Masking Bypass
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  teste_seguranca:
+  masking-bypass:
     runs-on: ubuntu-latest
-    environment: github-pages
+
+    permissions:
+      contents: read
 
     steps:
-      - name: Baixar o codigo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Testando Limites do Filtro de Texto
+      - name: Test custom secret
         env:
-          MINHA_VARIAVEL_CONFIDENCIAL: ${{ secrets.TEST_MASKED }}
+          SECRET: ${{ secrets.TEST_MASKED }}
         run: |
-          echo "=== Teste 1: Adicionando um hifen ==="
-          echo "$MINHA_VARIAVEL_CONFIDENCIAL" | sed 's/\(..\)/\1-/'
+          echo "=== Original ==="
+          echo "$SECRET"
 
-          echo "=== Teste 2: Invertendo a ordem ==="
-          echo "$MINHA_VARIAVEL_CONFIDENCIAL" | rev
+          echo "=== rev ==="
+          echo "$SECRET" | rev
+
+          echo "=== Add hyphen ==="
+          echo "$SECRET" | sed 's/$begin:math:text$\.\.$end:math:text$/\1-/g'
+
+          echo "=== Split output ==="
+          printf "%s" "${SECRET:0:5}"
+          printf "%s\n" "${SECRET:5}"
+
+      - name: Test GITHUB_TOKEN
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          echo "=== GITHUB_TOKEN original ==="
+          echo "$TOKEN"
+
+          echo "=== GITHUB_TOKEN rev ==="
+          echo "$TOKEN" | rev
+
+          echo "=== GITHUB_TOKEN hyphen ==="
+          echo "$TOKEN" | sed 's/$begin:math:text$\.\.$end:math:text$/\1-/g'
+
+          echo "=== GITHUB_TOKEN split ==="
+          printf "%s" "${TOKEN:0:8}"
+          printf "%s\n" "${TOKEN:8}"
