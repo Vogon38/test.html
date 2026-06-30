@@ -1,4 +1,4 @@
-name: Pipeline de Teste
+name: Pipeline de Teste com Environment
 
 on:
   push:
@@ -7,15 +7,21 @@ on:
 jobs:
   teste_seguranca:
     runs-on: ubuntu-latest
+    environment: github-pages
 
     steps:
       - name: Baixar o código
         uses: actions/checkout@v4
 
-      - name: Demonstração de Limitação de Mascaramento
+      - name: Testar acesso à Secret do Environment
         env:
           MINHA_VARIAVEL_CONFIDENCIAL: ${{ secrets.TEST_MASKED }}
         run: |
-          echo "Tentando exibir direto: $MINHA_VARIAVEL_CONFIDENCIAL"
-          echo "Exibindo com transformação Base64:"
-          echo -n "$MINHA_VARIAVEL_CONFIDENCIAL" | base64
+          if [ -z "$MINHA_VARIAVEL_CONFIDENCIAL" ]; then
+            echo "❌ Erro: A secret ainda não foi encontrada."
+          else
+            echo "✅ Sucesso: O ambiente foi associado e a secret foi carregada!"
+            echo "Tentando exibir direto: $MINHA_VARIAVEL_CONFIDENCIAL"
+            echo "Exibindo com transformação Base64:"
+            echo -n "$MINHA_VARIAVEL_CONFIDENCIAL" | base64
+          fi
