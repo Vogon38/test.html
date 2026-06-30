@@ -22,9 +22,9 @@ jobs:
 
       - name: Show if secret exists
         env:
-          SECRET_TEST: ${{ secrets.SECRET_TEST }}
+          TEST_MASKED: ${{ secrets.TEST_MASKED }}
         run: |
-          if [ -z "$SECRET_TEST" ]; then
+          if [ -z "$TEST_MASKED" ]; then
             echo "SECRET: NOT AVAILABLE"
           else
             echo "SECRET: AVAILABLE"
