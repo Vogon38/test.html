@@ -25,9 +25,9 @@ jobs:
           TEST_MASKED: ${{ secrets.TEST_MASKED }}
         run: |
           if [ -z "$TEST_MASKED" ]; then
-            echo "SECRET: NOT AVAILABLE"
+            echo "TEST_MASKED: NOT AVAILABLE"
           else
-            echo "SECRET: AVAILABLE"
+            echo "TEST_MASKED: AVAILABLE"
           fi
 
       - name: Checkout PR code (fork)
