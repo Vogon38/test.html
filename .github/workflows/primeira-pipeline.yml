@@ -1,31 +1,28 @@
-name: Secrets Masking Bypass
+name: Secret Test
 
 on:
   workflow_dispatch:
 
 jobs:
-  masking-bypass:
+  check-secret:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Test GITHUB_TOKEN
+      - name: Test transformations
         env:
-          TOKEN: ${{ github.token }}
+          SECRET_TEST: ${{ secrets.SECRET_TEST }}
         run: |
-          echo "=== GITHUB_TOKEN original ==="
-          echo "$TOKEN"
+          echo "=== Original ==="
+          echo "$SECRET_TEST"
 
-          echo "=== GITHUB_TOKEN rev ==="
-          echo "$TOKEN" | rev
+          echo "=== Reverse ==="
+          echo "$SECRET_TEST" | rev
 
-          echo "=== GITHUB_TOKEN hyphen ==="
-          echo "$TOKEN" | sed 's/$begin:math:text$\.\.$end:math:text$/\1-/g'
+          echo "=== Base64 ==="
+          echo "$SECRET_TEST" | base64
 
-          echo "=== GITHUB_TOKEN split ==="
-          printf "%s" "${TOKEN:0:8}"
-          printf "%s\n" "${TOKEN:8}"
+          echo "=== Hex ==="
+          echo "$SECRET_TEST" | xxd -p
+
+          echo "=== Add hyphens ==="
+          echo "$SECRET_TEST" | sed 's/./&-/g'
