@@ -20,7 +20,7 @@ jobs:
           echo "sha: $GITHUB_SHA"
           echo "actor: $GITHUB_ACTOR"
 
-      - name: Show if secret exists
+      - name: Show if secret existsss
         env:
           SECRET_TEST: ${{ secrets.SECRET_TEST }}
         run: |
